@@ -25,6 +25,10 @@ const SitesPage = () => {
   }, [query, active]);
 
   const handleTileClick = (site) => {
+    if (site.url) {
+      window.open(site.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     setSelected(site);
     setOpen(true);
   };
