@@ -5,6 +5,8 @@ import { categories, sites } from '../mock';
 import SiteTile from '../components/SiteTile';
 import ComingSoonModal from '../components/ComingSoonModal';
 import StarField from '../components/StarField';
+import IntroScreen from '../components/IntroScreen';
+import BrandBar from '../components/BrandBar';
 
 const FAV_KEY = 'sites_for_school_favorites_v1';
 
@@ -14,6 +16,7 @@ const SitesPage = () => {
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [introDone, setIntroDone] = useState(false);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -72,6 +75,8 @@ const SitesPage = () => {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       <StarField />
+      {!introDone && <IntroScreen onDone={() => setIntroDone(true)} />}
+      <BrandBar />
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8">
         {/* Title */}
