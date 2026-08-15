@@ -1,28 +1,61 @@
-import React, { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, Star } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { categories, sites } from '../mock';
 import SiteTile from '../components/SiteTile';
 import ComingSoonModal from '../components/ComingSoonModal';
 import StarField from '../components/StarField';
 
+const FAV_KEY = 'sites_for_school_favorites_v1';
+
 const SitesPage = () => {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState('all');
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      if (raw) setFavorites(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Persist favorites
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+    } catch {
+      /* ignore */
+    }
+  }, [favorites]);
+
+  const toggleFavorite = (id) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return sites.filter((s) => {
-      const catMatch = active === 'all' || s.category === active;
+      let catMatch = true;
+      if (active === 'favorites') {
+        catMatch = favorites.includes(s.id);
+      } else if (active !== 'all') {
+        catMatch = s.category === active;
+      }
       const qMatch =
         !q ||
         s.name.toLowerCase().includes(q) ||
         s.description.toLowerCase().includes(q);
       return catMatch && qMatch;
     });
-  }, [query, active]);
+  }, [query, active, favorites]);
 
   const handleTileClick = (site) => {
     if (site.url) {
@@ -32,6 +65,9 @@ const SitesPage = () => {
     setSelected(site);
     setOpen(true);
   };
+
+  // Build filter list: categories + Favorites right after OS
+  const filterList = [...categories, { id: 'favorites', label: 'Favorites' }];
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
@@ -62,18 +98,27 @@ const SitesPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {categories.map((c) => {
+            {filterList.map((c) => {
               const isActive = active === c.id;
+              const isFav = c.id === 'favorites';
               return (
                 <button
                   key={c.id}
                   onClick={() => setActive(c.id)}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
                     isActive
                       ? 'border-white bg-white text-black'
                       : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
                   }`}
                 >
+                  {isFav && (
+                    <Star
+                      className="h-3.5 w-3.5"
+                      fill={isActive ? '#000' : '#fde047'}
+                      stroke={isActive ? '#000' : '#fde047'}
+                      strokeWidth={2}
+                    />
+                  )}
                   {c.label}
                 </button>
               );
@@ -85,12 +130,20 @@ const SitesPage = () => {
         <section className="mt-12">
           {filtered.length === 0 ? (
             <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
-              No sites found. Try a different search or category.
+              {active === 'favorites'
+                ? 'No favorites yet. Tap the star on any tile to add it here.'
+                : 'No sites found. Try a different search or category.'}
             </div>
           ) : (
             <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
               {filtered.map((site) => (
-                <SiteTile key={site.id} site={site} onClick={handleTileClick} />
+                <SiteTile
+                  key={site.id}
+                  site={site}
+                  onClick={handleTileClick}
+                  isFavorite={favorites.includes(site.id)}
+                  onToggleFavorite={toggleFavorite}
+                />
               ))}
             </div>
           )}
@@ -98,7 +151,7 @@ const SitesPage = () => {
 
         {/* Footer note */}
         <p className="mt-16 text-center text-xs text-white/40">
-          Made with ✨ for curious students. Click any tile to launch.
+          Made for curious students. Click any tile to launch.
         </p>
       </main>
 

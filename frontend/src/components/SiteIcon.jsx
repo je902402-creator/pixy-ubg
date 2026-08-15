@@ -47,6 +47,27 @@ const SiteIcon = ({ site }) => {
     );
   }
 
+  // Figure os v3 - two overlapping white squares with V3 badge
+  if (iconType === 'figure-v3') {
+    return (
+      <div
+        className="relative flex h-full w-full items-center justify-center"
+        style={baseStyle}
+      >
+        <svg viewBox="0 0 64 64" className="h-16 w-16" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="30" width="22" height="22" rx="4" fill="#ffffff" />
+          <rect x="26" y="12" width="22" height="22" rx="4" fill="#ffffff" />
+        </svg>
+        <span
+          className="absolute right-1.5 top-1.5 rounded-md bg-white px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-black"
+          style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        >
+          V3
+        </span>
+      </div>
+    );
+  }
+
   // Text-based letter icons with unique styling per site
   const textStyle = {
     color: accent,

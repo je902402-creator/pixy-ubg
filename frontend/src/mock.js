@@ -105,4 +105,15 @@ export const sites = [
     glow: '#ff1e1e',
     description: 'All your favorite movies in one hub.',
   },
+  {
+    id: 'figure-os-v3',
+    name: 'Figure os v3',
+    category: 'os',
+    accent: '#ffffff',
+    bg: '#000000',
+    iconType: 'figure-v3',
+    iconValue: 'v3',
+    glow: '#ffffff',
+    description: 'The next generation of the Figure OS experience.',
+  },
 ];
