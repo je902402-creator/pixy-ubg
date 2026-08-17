@@ -120,7 +120,7 @@ export const sites = [
     id: 'cherri',
     name: 'Cherri',
     category: 'tools',
-    url: 'https://cdn.jsdelivr.net/',
+    url: 'https://cdn.jsdelivr.net/gh/cherriunblocked/svg@b2a4756/index.svg',
     accent: '#f8b7d5',
     bg: '#1a1620',
     iconType: 'image',
