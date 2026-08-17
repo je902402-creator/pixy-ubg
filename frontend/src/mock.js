@@ -116,4 +116,17 @@ export const sites = [
     glow: '#ffffff',
     description: 'The next generation of the Figure OS experience.',
   },
+  {
+    id: 'cherri',
+    name: 'Cherri',
+    category: 'tools',
+    url: 'https://cdn.jsdelivr.net/',
+    accent: '#f8b7d5',
+    bg: '#1a1620',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/q4db3yyo_IMG_6392.jpeg',
+    glow: '#f8b7d5',
+    description: 'Sweet little launcher with a cherry-blossom vibe.',
+  },
 ];

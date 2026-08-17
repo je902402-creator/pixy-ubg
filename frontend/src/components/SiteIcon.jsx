@@ -47,6 +47,20 @@ const SiteIcon = ({ site }) => {
     );
   }
 
+  // Full-bleed image icon (e.g., Cherri uses a photo)
+  if (iconType === 'image') {
+    return (
+      <div className="h-full w-full" style={baseStyle}>
+        <img
+          src={iconValue}
+          alt={name}
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
+      </div>
+    );
+  }
+
   // Figure os v3 - two overlapping white squares with V3 badge
   if (iconType === 'figure-v3') {
     return (
