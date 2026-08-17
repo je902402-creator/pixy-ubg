@@ -16,8 +16,9 @@ export const sites = [
     url: 'https://cineosweb.github.io',
     accent: '#ff3b3b',
     bg: '#0f0f0f',
-    iconType: 'text',
-    iconValue: 'C',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/tyrgc08o_IMG_5815.jpeg',
     glow: '#ff2d2d',
     description: 'A sleek movie streaming OS interface.',
   },
@@ -28,8 +29,9 @@ export const sites = [
     url: 'https://t9os.space/class.html',
     accent: '#7b2cff',
     bg: '#ffffff',
-    iconType: 'text',
-    iconValue: 'T',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/qyr5kwfj_IMG_6394.jpeg',
     glow: '#8a3bff',
     description: 'Fast, customizable browser-based OS.',
   },
