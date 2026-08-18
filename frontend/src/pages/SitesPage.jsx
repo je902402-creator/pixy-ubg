@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, Download, Trash2 } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { categories, sites } from '../mock';
 import SiteTile from '../components/SiteTile';
@@ -7,8 +7,14 @@ import ComingSoonModal from '../components/ComingSoonModal';
 import StarField from '../components/StarField';
 import IntroScreen from '../components/IntroScreen';
 import BrandBar from '../components/BrandBar';
+import SiteIcon from '../components/SiteIcon';
 
 const FAV_KEY = 'sites_for_school_favorites_v1';
+const INSTALLED_KEY = 'sites_for_school_installed_v1';
+const PENDING_KEY = 'sites_for_school_pending_v1';
+const INSTALL_DELAY_MS = 5000;
+const APP_STORE_ICON =
+  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/hg8u7q1t_image.webp';
 
 const SitesPage = () => {
   const [query, setQuery] = useState('');
@@ -17,25 +23,58 @@ const SitesPage = () => {
   const [open, setOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [introDone, setIntroDone] = useState(false);
+  // Installed = which apps are visible on home. Default: all installed.
+  const [installed, setInstalled] = useState(sites.map((s) => s.id));
+  // Pending = map of id -> unlock timestamp (ms since epoch)
+  const [pending, setPending] = useState({});
+  // A tick counter to force re-render for countdowns
+  const [, setNow] = useState(Date.now());
 
-  // Load favorites from localStorage
+  // Load stored state
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(FAV_KEY);
-      if (raw) setFavorites(JSON.parse(raw));
+      const f = localStorage.getItem(FAV_KEY);
+      if (f) setFavorites(JSON.parse(f));
+      const i = localStorage.getItem(INSTALLED_KEY);
+      if (i) setInstalled(JSON.parse(i));
+      const p = localStorage.getItem(PENDING_KEY);
+      if (p) setPending(JSON.parse(p));
     } catch {
       /* ignore */
     }
   }, []);
 
-  // Persist favorites
   useEffect(() => {
-    try {
-      localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); } catch { /* ignore */ }
   }, [favorites]);
+  useEffect(() => {
+    try { localStorage.setItem(INSTALLED_KEY, JSON.stringify(installed)); } catch { /* ignore */ }
+  }, [installed]);
+  useEffect(() => {
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch { /* ignore */ }
+  }, [pending]);
+
+  // Tick every second while any pending
+  useEffect(() => {
+    const hasPending = Object.keys(pending).length > 0;
+    if (!hasPending) return;
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [pending]);
+
+  // Clean up expired pending
+  useEffect(() => {
+    const now = Date.now();
+    const entries = Object.entries(pending);
+    const expired = entries.filter(([, ts]) => ts <= now).map(([id]) => id);
+    if (expired.length > 0) {
+      setPending((prev) => {
+        const copy = { ...prev };
+        expired.forEach((id) => delete copy[id]);
+        return copy;
+      });
+    }
+  });
 
   const toggleFavorite = (id) => {
     setFavorites((prev) =>
@@ -43,24 +82,35 @@ const SitesPage = () => {
     );
   };
 
+  const uninstallApp = (id) => {
+    setInstalled((prev) => prev.filter((x) => x !== id));
+    setPending((prev) => {
+      const c = { ...prev };
+      delete c[id];
+      return c;
+    });
+  };
+
+  const installApp = (id) => {
+    setInstalled((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setPending((prev) => ({ ...prev, [id]: Date.now() + INSTALL_DELAY_MS }));
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return sites.filter((s) => {
+      if (!installed.includes(s.id)) return false;
       let catMatch = true;
-      if (active === 'favorites') {
-        catMatch = favorites.includes(s.id);
-      } else if (active !== 'all') {
-        catMatch = s.category === active;
-      }
-      const qMatch =
-        !q ||
-        s.name.toLowerCase().includes(q) ||
-        s.description.toLowerCase().includes(q);
+      if (active === 'favorites') catMatch = favorites.includes(s.id);
+      else if (active !== 'all' && active !== 'store') catMatch = s.category === active;
+      const qMatch = !q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
       return catMatch && qMatch;
     });
-  }, [query, active, favorites]);
+  }, [query, active, favorites, installed]);
 
   const handleTileClick = (site) => {
+    // Block if pending (5s countdown)
+    if (pending[site.id] && pending[site.id] > Date.now()) return;
     if (site.url) {
       window.open(site.url, '_blank', 'noopener,noreferrer');
       return;
@@ -69,8 +119,13 @@ const SitesPage = () => {
     setOpen(true);
   };
 
-  // Build filter list: categories + Favorites right after OS
   const filterList = [...categories, { id: 'favorites', label: 'Favorites' }];
+
+  const remainingSec = (id) => {
+    const ts = pending[id];
+    if (!ts) return 0;
+    return Math.max(0, Math.ceil((ts - Date.now()) / 1000));
+  };
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
@@ -79,7 +134,6 @@ const SitesPage = () => {
       <BrandBar />
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8">
-        {/* Title */}
         <h1
           className="text-center text-4xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)] sm:text-5xl md:text-6xl"
           style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
@@ -90,71 +144,138 @@ const SitesPage = () => {
           A curated launchpad of unblocked apps, games, and tools for your school days.
         </p>
 
-        {/* Search + Filters */}
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-stretch gap-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search sites..."
-              className="h-11 rounded-full border-white/15 bg-white/5 pl-10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
-            />
-          </div>
+          {active !== 'store' && (
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search sites..."
+                className="h-11 rounded-full border-white/15 bg-white/5 pl-10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+              />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {filterList.map((c) => {
+            {filterList.map((c, idx) => {
               const isActive = active === c.id;
               const isFav = c.id === 'favorites';
               return (
-                <button
-                  key={c.id}
-                  onClick={() => setActive(c.id)}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                    isActive
-                      ? 'border-white bg-white text-black'
-                      : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
-                  }`}
-                >
-                  {isFav && (
-                    <Star
-                      className="h-3.5 w-3.5"
-                      fill={isActive ? '#000' : '#fde047'}
-                      stroke={isActive ? '#000' : '#fde047'}
-                      strokeWidth={2}
-                    />
+                <React.Fragment key={c.id}>
+                  <button
+                    onClick={() => setActive(c.id)}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                      isActive
+                        ? 'border-white bg-white text-black'
+                        : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
+                    }`}
+                  >
+                    {isFav && (
+                      <Star className="h-3.5 w-3.5"
+                        fill={isActive ? '#000' : '#fde047'}
+                        stroke={isActive ? '#000' : '#fde047'}
+                        strokeWidth={2} />
+                    )}
+                    {c.label}
+                  </button>
+                  {/* App Store button right after "All" */}
+                  {idx === 0 && (
+                    <button
+                      onClick={() => setActive('store')}
+                      title="App Store"
+                      aria-label="Open App Store"
+                      className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border transition-transform duration-200 hover:scale-110 ${
+                        active === 'store'
+                          ? 'border-white shadow-[0_0_0_2px_rgba(255,255,255,0.5)]'
+                          : 'border-white/15'
+                      }`}
+                    >
+                      <img src={APP_STORE_ICON} alt="App Store" className="h-full w-full object-cover" />
+                    </button>
                   )}
-                  {c.label}
-                </button>
+                </React.Fragment>
               );
             })}
           </div>
         </div>
 
-        {/* Grid */}
-        <section className="mt-12">
-          {filtered.length === 0 ? (
-            <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
-              {active === 'favorites'
-                ? 'No favorites yet. Tap the star on any tile to add it here.'
-                : 'No sites found. Try a different search or category.'}
+        {/* Store view */}
+        {active === 'store' ? (
+          <section className="mt-10">
+            <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
+              <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-6 py-4">
+                <img src={APP_STORE_ICON} alt="App Store" className="h-9 w-9 rounded-lg" />
+                <div>
+                  <h2 className="text-lg font-bold">App Store</h2>
+                  <p className="text-xs text-gray-500">Install or remove apps from your home screen.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 md:grid-cols-4">
+                {sites.map((site) => {
+                  const isInstalled = installed.includes(site.id);
+                  return (
+                    <div key={site.id} className="flex items-center gap-3 rounded-xl border border-gray-200 p-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-gray-200">
+                        <SiteIcon site={site} />
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-semibold">{site.name}</span>
+                        {isInstalled ? (
+                          <button
+                            onClick={() => uninstallApp(site.id)}
+                            className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-200"
+                          >
+                            <Trash2 className="h-3 w-3" /> Uninstall
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => installApp(site.id)}
+                            className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                          >
+                            <Download className="h-3 w-3" /> Install
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
-              {filtered.map((site) => (
-                <SiteTile
-                  key={site.id}
-                  site={site}
-                  onClick={handleTileClick}
-                  isFavorite={favorites.includes(site.id)}
-                  onToggleFavorite={toggleFavorite}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <section className="mt-12">
+            {filtered.length === 0 ? (
+              <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
+                {active === 'favorites'
+                  ? 'No favorites yet. Tap the star on any tile to add it here.'
+                  : 'No apps here. Try the App Store to install more.'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
+                {filtered.map((site) => {
+                  const secs = remainingSec(site.id);
+                  return (
+                    <div key={site.id} className="relative">
+                      <SiteTile
+                        site={site}
+                        onClick={handleTileClick}
+                        isFavorite={favorites.includes(site.id)}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                      {secs > 0 && (
+                        <div className="pointer-events-none absolute left-1/2 top-[56px] flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full bg-black/70 backdrop-blur-md sm:top-[64px] sm:h-24 sm:w-24">
+                          <span className="text-3xl font-black text-white tabular-nums">{secs}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
-        {/* Footer note */}
         <p className="mt-16 text-center text-xs text-white/40">
           Made for curious students. Click any tile to launch.
         </p>
