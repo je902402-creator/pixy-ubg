@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Star, Download, Trash2 } from 'lucide-react';
+import { Search, Star, Download, Trash2, Settings as SettingsIcon, X, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { categories, sites } from '../mock';
 import SiteTile from '../components/SiteTile';
 import ComingSoonModal from '../components/ComingSoonModal';
 import StarField from '../components/StarField';
+import VideoBackground from '../components/VideoBackground';
 import IntroScreen from '../components/IntroScreen';
 import BrandBar from '../components/BrandBar';
 import SiteIcon from '../components/SiteIcon';
@@ -12,9 +13,18 @@ import SiteIcon from '../components/SiteIcon';
 const FAV_KEY = 'sites_for_school_favorites_v1';
 const INSTALLED_KEY = 'sites_for_school_installed_v1';
 const PENDING_KEY = 'sites_for_school_pending_v1';
+const BG_KEY = 'sites_for_school_bg_v1';
 const INSTALL_DELAY_MS = 5000;
 const APP_STORE_ICON =
   'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/hg8u7q1t_image.webp';
+
+const BACKGROUNDS = [
+  { id: 'default', name: 'Starry (default)', type: 'stars' },
+  { id: 'bg1', name: 'Nebula', type: 'video', src: 'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/dfrrm9x9_33A56.mp4' },
+  { id: 'bg2', name: 'Gojo x Sukuna', type: 'video', src: 'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/tdo1gj6x_beyc14cy_Gojo-Sukuna.mp4' },
+  { id: 'bg3', name: 'Snow Fox', type: 'video', src: 'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/1ocr1fut_eqmwihuk_SnowFox.mp4' },
+  { id: 'bg4', name: 'Hunt', type: 'video', src: 'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/spqld5jf_Hunt.mp4' },
+];
 
 const SitesPage = () => {
   const [query, setQuery] = useState('');
@@ -27,6 +37,8 @@ const SitesPage = () => {
   const [installed, setInstalled] = useState(sites.map((s) => s.id));
   // Pending = map of id -> unlock timestamp (ms since epoch)
   const [pending, setPending] = useState({});
+  const [bgId, setBgId] = useState('default');
+  const [settingsView, setSettingsView] = useState(null); // null | 'menu' | 'backgrounds'
   // A tick counter to force re-render for countdowns
   const [, setNow] = useState(Date.now());
 
@@ -39,6 +51,8 @@ const SitesPage = () => {
       if (i) setInstalled(JSON.parse(i));
       const p = localStorage.getItem(PENDING_KEY);
       if (p) setPending(JSON.parse(p));
+      const b = localStorage.getItem(BG_KEY);
+      if (b) setBgId(b);
     } catch {
       /* ignore */
     }
@@ -53,6 +67,9 @@ const SitesPage = () => {
   useEffect(() => {
     try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch { /* ignore */ }
   }, [pending]);
+  useEffect(() => {
+    try { localStorage.setItem(BG_KEY, bgId); } catch { /* ignore */ }
+  }, [bgId]);
 
   // Tick every second while any pending
   useEffect(() => {
@@ -127,11 +144,28 @@ const SitesPage = () => {
     return Math.max(0, Math.ceil((ts - Date.now()) / 1000));
   };
 
+  const activeBg = BACKGROUNDS.find((b) => b.id === bgId) || BACKGROUNDS[0];
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      <StarField />
+      {activeBg.type === 'video' ? (
+        <VideoBackground src={activeBg.src} />
+      ) : (
+        <StarField />
+      )}
       {!introDone && <IntroScreen onDone={() => setIntroDone(true)} />}
       <BrandBar />
+
+      {/* Settings button top-right */}
+      <button
+        onClick={() => setSettingsView('menu')}
+        aria-label="Open settings"
+        title="Settings"
+        className="absolute right-4 top-4 z-30 flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white/90 backdrop-blur-md transition-transform duration-200 hover:scale-105 sm:right-6 sm:top-6"
+      >
+        <SettingsIcon className="h-4 w-4" />
+        <span className="text-xs font-bold uppercase tracking-[0.2em]">Settings</span>
+      </button>
 
       <main className="relative mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8">
         <h1
@@ -206,10 +240,17 @@ const SitesPage = () => {
             <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
               <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-6 py-4">
                 <img src={APP_STORE_ICON} alt="App Store" className="h-9 w-9 rounded-lg" />
-                <div>
+                <div className="flex-1">
                   <h2 className="text-lg font-bold">App Store</h2>
                   <p className="text-xs text-gray-500">Install or remove apps from your home screen.</p>
                 </div>
+                <button
+                  onClick={() => setActive('all')}
+                  aria-label="Close App Store"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 md:grid-cols-4">
                 {sites.map((site) => {
@@ -282,6 +323,100 @@ const SitesPage = () => {
       </main>
 
       <ComingSoonModal site={selected} open={open} onOpenChange={setOpen} />
+
+      {/* Settings overlay */}
+      {settingsView && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+          <div className="mt-16 w-full max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-[#0b0b12] text-white shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/10 bg-white/5 px-6 py-4">
+              {settingsView === 'backgrounds' && (
+                <button
+                  onClick={() => setSettingsView('menu')}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              )}
+              <SettingsIcon className="h-5 w-5 text-white/80" />
+              <h2 className="flex-1 text-lg font-bold">
+                {settingsView === 'backgrounds' ? 'Backgrounds' : 'Settings'}
+              </h2>
+              <button
+                onClick={() => setSettingsView(null)}
+                aria-label="Close settings"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {settingsView === 'menu' && (
+              <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-4">
+                <button
+                  onClick={() => setSettingsView('backgrounds')}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-center transition-colors hover:bg-white/10"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
+                    <ImageIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Backgrounds</span>
+                </button>
+                {['Themes', 'Sounds', 'About'].map((label) => (
+                  <button
+                    key={label}
+                    disabled
+                    className="flex cursor-not-allowed flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-center opacity-60"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
+                      <SettingsIcon className="h-6 w-6 text-white/70" />
+                    </div>
+                    <span className="text-sm font-semibold">{label}</span>
+                    <span className="text-[10px] uppercase tracking-widest text-white/50">Coming soon</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {settingsView === 'backgrounds' && (
+              <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 md:grid-cols-3">
+                {BACKGROUNDS.map((bg) => {
+                  const isActive = bgId === bg.id;
+                  return (
+                    <button
+                      key={bg.id}
+                      onClick={() => setBgId(bg.id)}
+                      className={`group relative overflow-hidden rounded-2xl border-2 text-left transition-all ${
+                        isActive ? 'border-white shadow-[0_0_0_3px_rgba(255,255,255,0.25)]' : 'border-white/10 hover:border-white/30'
+                      }`}
+                    >
+                      <div className="relative h-32 w-full overflow-hidden bg-black">
+                        {bg.type === 'video' ? (
+                          <video src={bg.src} muted autoPlay loop playsInline className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-black">
+                            <div className="grid grid-cols-6 gap-1 opacity-80">
+                              {Array.from({ length: 24 }).map((_, i) => (
+                                <span key={i} className="h-1 w-1 rounded-full bg-white" style={{ opacity: (i % 3) * 0.3 + 0.3 }} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {isActive && (
+                          <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-black">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="px-3 py-2 text-sm font-semibold text-white/90">{bg.name}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
