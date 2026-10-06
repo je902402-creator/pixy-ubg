@@ -135,4 +135,18 @@ export const sites = [
     glow: '#f8b7d5',
     description: 'Sweet little launcher with a cherry-blossom vibe.',
   },
+  {
+    id: 'unblockedzone',
+    name: 'unblockedzone',
+    category: 'tools',
+    url: 'https://esm.sh/burgerland@1.0.0/assets/index.html',
+    defaultInstalled: false,
+    accent: '#ff8a1f',
+    bg: '#0a0a12',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/yy4i8fjj_c8d512cdef100a0625273d8a1e9ab698c59ef4956eafcaa5db595edaa15eaf0b.webp',
+    glow: '#ff8a1f',
+    description: 'A whole zone of unblocked fun. Install to launch.',
+  },
 ];

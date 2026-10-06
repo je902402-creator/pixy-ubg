@@ -1,5 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Star, Download, Trash2, Settings as SettingsIcon, X, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import {
+  Search,
+  Star,
+  Download,
+  Trash2,
+  Settings as SettingsIcon,
+  X,
+  ArrowLeft,
+  Image as ImageIcon,
+  AlertTriangle,
+  ChevronRight,
+  ChevronLeft,
+  Grid3x3,
+  Gamepad2,
+  Film,
+  Wrench,
+  Monitor,
+} from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { categories, sites } from '../mock';
 import SiteTile from '../components/SiteTile';
@@ -7,7 +24,6 @@ import ComingSoonModal from '../components/ComingSoonModal';
 import StarField from '../components/StarField';
 import VideoBackground from '../components/VideoBackground';
 import IntroScreen from '../components/IntroScreen';
-import BrandBar from '../components/BrandBar';
 import SiteIcon from '../components/SiteIcon';
 
 const FAV_KEY = 'sites_for_school_favorites_v1';
@@ -15,8 +31,12 @@ const INSTALLED_KEY = 'sites_for_school_installed_v1';
 const PENDING_KEY = 'sites_for_school_pending_v1';
 const BG_KEY = 'sites_for_school_bg_v1';
 const INSTALL_DELAY_MS = 5000;
+const PAGE_SIZE = 6;
+
 const APP_STORE_ICON =
   'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/hg8u7q1t_image.webp';
+const CLASSLINK_LOGO =
+  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/9wb3a1zu_image.png';
 
 const BACKGROUNDS = [
   { id: 'default', name: 'Starry (default)', type: 'stars' },
@@ -26,6 +46,18 @@ const BACKGROUNDS = [
   { id: 'bg4', name: 'Hunt', type: 'video', src: 'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/spqld5jf_Hunt.mp4' },
 ];
 
+const CAT_ICON = {
+  all: Grid3x3,
+  games: Gamepad2,
+  movies: Film,
+  tools: Wrench,
+  os: Monitor,
+};
+
+// Default install list = every site whose defaultInstalled !== false
+const defaultInstalled = () =>
+  sites.filter((s) => s.defaultInstalled !== false).map((s) => s.id);
+
 const SitesPage = () => {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState('all');
@@ -33,16 +65,13 @@ const SitesPage = () => {
   const [open, setOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [introDone, setIntroDone] = useState(false);
-  // Installed = which apps are visible on home. Default: all installed.
-  const [installed, setInstalled] = useState(sites.map((s) => s.id));
-  // Pending = map of id -> unlock timestamp (ms since epoch)
+  const [installed, setInstalled] = useState(defaultInstalled);
   const [pending, setPending] = useState({});
   const [bgId, setBgId] = useState('default');
-  const [settingsView, setSettingsView] = useState(null); // null | 'menu' | 'backgrounds'
-  // A tick counter to force re-render for countdowns
+  const [settingsView, setSettingsView] = useState(null);
+  const [page, setPage] = useState(0);
   const [, setNow] = useState(Date.now());
 
-  // Load stored state
   useEffect(() => {
     try {
       const f = localStorage.getItem(FAV_KEY);
@@ -53,51 +82,34 @@ const SitesPage = () => {
       if (p) setPending(JSON.parse(p));
       const b = localStorage.getItem(BG_KEY);
       if (b) setBgId(b);
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => {
-    try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); } catch { /* ignore */ }
-  }, [favorites]);
-  useEffect(() => {
-    try { localStorage.setItem(INSTALLED_KEY, JSON.stringify(installed)); } catch { /* ignore */ }
-  }, [installed]);
-  useEffect(() => {
-    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch { /* ignore */ }
-  }, [pending]);
-  useEffect(() => {
-    try { localStorage.setItem(BG_KEY, bgId); } catch { /* ignore */ }
-  }, [bgId]);
+  useEffect(() => { try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); } catch { /* */ } }, [favorites]);
+  useEffect(() => { try { localStorage.setItem(INSTALLED_KEY, JSON.stringify(installed)); } catch { /* */ } }, [installed]);
+  useEffect(() => { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch { /* */ } }, [pending]);
+  useEffect(() => { try { localStorage.setItem(BG_KEY, bgId); } catch { /* */ } }, [bgId]);
 
-  // Tick every second while any pending
   useEffect(() => {
-    const hasPending = Object.keys(pending).length > 0;
-    if (!hasPending) return;
+    if (!Object.keys(pending).length) return;
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, [pending]);
 
-  // Clean up expired pending
   useEffect(() => {
     const now = Date.now();
-    const entries = Object.entries(pending);
-    const expired = entries.filter(([, ts]) => ts <= now).map(([id]) => id);
-    if (expired.length > 0) {
+    const expired = Object.entries(pending).filter(([, ts]) => ts <= now).map(([id]) => id);
+    if (expired.length) {
       setPending((prev) => {
-        const copy = { ...prev };
-        expired.forEach((id) => delete copy[id]);
-        return copy;
+        const c = { ...prev };
+        expired.forEach((id) => delete c[id]);
+        return c;
       });
     }
   });
 
-  const toggleFavorite = (id) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  const toggleFavorite = (id) =>
+    setFavorites((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const uninstallApp = (id) => {
     setInstalled((prev) => prev.filter((x) => x !== id));
@@ -125,18 +137,19 @@ const SitesPage = () => {
     });
   }, [query, active, favorites, installed]);
 
+  // Reset page when filter/search changes
+  useEffect(() => { setPage(0); }, [active, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
   const handleTileClick = (site) => {
-    // Block if pending (5s countdown)
     if (pending[site.id] && pending[site.id] > Date.now()) return;
-    if (site.url) {
-      window.open(site.url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    setSelected(site);
-    setOpen(true);
+    if (site.url) { window.open(site.url, '_blank', 'noopener,noreferrer'); return; }
+    setSelected(site); setOpen(true);
   };
 
-  const filterList = [...categories, { id: 'favorites', label: 'Favorites' }];
+  const triggerPanic = () => { window.location.href = 'https://launchpad.classlink.com'; };
 
   const remainingSec = (id) => {
     const ts = pending[id];
@@ -146,98 +159,128 @@ const SitesPage = () => {
 
   const activeBg = BACKGROUNDS.find((b) => b.id === bgId) || BACKGROUNDS[0];
 
+  const filterList = [
+    { id: 'all', label: 'All' },
+    { id: 'store', label: 'App Store' },
+    { id: 'games', label: 'Games' },
+    { id: 'movies', label: 'Movies' },
+    { id: 'tools', label: 'Tools' },
+    { id: 'os', label: 'OS' },
+    { id: 'favorites', label: 'Favorites' },
+  ];
+
+  const SidebarButton = ({ icon: Icon, label, onClick, active: isActive, iconNode, danger }) => (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+        isActive
+          ? 'border-white bg-white text-black'
+          : danger
+          ? 'border-red-400/30 bg-red-500/10 text-red-200 hover:bg-red-500/20'
+          : 'border-white/10 bg-white/5 text-white/85 hover:bg-white/10'
+      }`}
+    >
+      {iconNode ? (
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md">
+          {iconNode}
+        </span>
+      ) : Icon ? (
+        <Icon className="h-4 w-4 shrink-0" />
+      ) : null}
+      <span className="truncate">{label}</span>
+    </button>
+  );
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {activeBg.type === 'video' ? (
-        <VideoBackground src={activeBg.src} />
-      ) : (
-        <StarField />
-      )}
+      {activeBg.type === 'video' ? <VideoBackground src={activeBg.src} /> : <StarField />}
       {!introDone && <IntroScreen onDone={() => setIntroDone(true)} />}
-      <BrandBar />
 
-      {/* Settings button top-right */}
-      <button
-        onClick={() => setSettingsView('menu')}
-        aria-label="Open settings"
-        title="Settings"
-        className="absolute right-4 top-4 z-30 flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white/90 backdrop-blur-md transition-transform duration-200 hover:scale-105 sm:right-6 sm:top-6"
-      >
-        <SettingsIcon className="h-4 w-4" />
-        <span className="text-xs font-bold uppercase tracking-[0.2em]">Settings</span>
-      </button>
+      <main className="relative mx-auto flex min-h-screen max-w-[1400px] flex-col gap-6 px-4 py-6 md:flex-row md:px-6 md:py-8">
+        {/* LEFT SIDEBAR */}
+        <aside className="md:sticky md:top-6 md:h-[calc(100vh-4rem)] md:w-[300px] md:shrink-0">
+          <div className="flex h-full flex-col gap-4 rounded-3xl border border-white/10 bg-black/60 p-5 backdrop-blur-xl">
+            {/* Site name + made-by badge */}
+            <div>
+              <h1
+                className="text-xl font-extrabold tracking-tight text-white"
+                style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+              >
+                Sites for school. <span>:]</span>
+              </h1>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/85">
+                  Made by neuro
+                </span>
+              </div>
+            </div>
 
-      <main className="relative mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8">
-        <h1
-          className="text-center text-4xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)] sm:text-5xl md:text-6xl"
-          style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-        >
-          Sites for school. <span className="text-white">:]</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-xl text-center text-sm text-white/60 sm:text-base">
-          A curated launchpad of unblocked apps, games, and tools for your school days.
-        </p>
-
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-stretch gap-4">
-          {active !== 'store' && (
+            {/* Search */}
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search sites..."
-                className="h-11 rounded-full border-white/15 bg-white/5 pl-10 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+                className="h-10 rounded-xl border-white/15 bg-white/5 pl-9 text-sm text-white placeholder:text-white/40 focus-visible:ring-white/30"
               />
             </div>
-          )}
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {filterList.map((c, idx) => {
-              const isActive = active === c.id;
-              const isFav = c.id === 'favorites';
-              return (
-                <React.Fragment key={c.id}>
-                  <button
+            {/* Scrollable button list */}
+            <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+              <SidebarButton
+                label="Panic button"
+                onClick={triggerPanic}
+                danger
+                iconNode={
+                  <img src={CLASSLINK_LOGO} alt="" className="h-6 w-6 rounded-sm object-cover" />
+                }
+              />
+              <SidebarButton
+                icon={SettingsIcon}
+                label="Settings"
+                onClick={() => setSettingsView('menu')}
+              />
+
+              <div className="pt-2 text-[10px] font-bold uppercase tracking-widest text-white/40">
+                Categories
+              </div>
+
+              {filterList.map((c) => {
+                const Icon = CAT_ICON[c.id];
+                const isFav = c.id === 'favorites';
+                const isStore = c.id === 'store';
+                return (
+                  <SidebarButton
+                    key={c.id}
+                    label={c.label}
                     onClick={() => setActive(c.id)}
-                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                      isActive
-                        ? 'border-white bg-white text-black'
-                        : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
-                    }`}
-                  >
-                    {isFav && (
-                      <Star className="h-3.5 w-3.5"
-                        fill={isActive ? '#000' : '#fde047'}
-                        stroke={isActive ? '#000' : '#fde047'}
-                        strokeWidth={2} />
-                    )}
-                    {c.label}
-                  </button>
-                  {/* App Store button right after "All" */}
-                  {idx === 0 && (
-                    <button
-                      onClick={() => setActive('store')}
-                      title="App Store"
-                      aria-label="Open App Store"
-                      className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border transition-transform duration-200 hover:scale-110 ${
-                        active === 'store'
-                          ? 'border-white shadow-[0_0_0_2px_rgba(255,255,255,0.5)]'
-                          : 'border-white/15'
-                      }`}
-                    >
-                      <img src={APP_STORE_ICON} alt="App Store" className="h-full w-full object-cover" />
-                    </button>
-                  )}
-                </React.Fragment>
-              );
-            })}
+                    active={active === c.id}
+                    icon={!isFav && !isStore ? Icon : undefined}
+                    iconNode={
+                      isFav ? (
+                        <Star
+                          className="h-4 w-4"
+                          fill={active === c.id ? '#000' : '#fde047'}
+                          stroke={active === c.id ? '#000' : '#fde047'}
+                          strokeWidth={2}
+                        />
+                      ) : isStore ? (
+                        <img src={APP_STORE_ICON} alt="" className="h-6 w-6 rounded-md object-cover" />
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </aside>
 
-        {/* Store view */}
-        {active === 'store' ? (
-          <section className="mt-10">
-            <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
+        {/* RIGHT CONTENT */}
+        <section className="flex-1">
+          {active === 'store' ? (
+            <div className="overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
               <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-6 py-4">
                 <img src={APP_STORE_ICON} alt="App Store" className="h-9 w-9 rounded-lg" />
                 <div className="flex-1">
@@ -252,7 +295,7 @@ const SitesPage = () => {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sites.map((site) => {
                   const isInstalled = installed.includes(site.id);
                   return (
@@ -283,43 +326,75 @@ const SitesPage = () => {
                 })}
               </div>
             </div>
-          </section>
-        ) : (
-          <section className="mt-12">
-            {filtered.length === 0 ? (
-              <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/70">
-                {active === 'favorites'
-                  ? 'No favorites yet. Tap the star on any tile to add it here.'
-                  : 'No apps here. Try the App Store to install more.'}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
-                {filtered.map((site) => {
-                  const secs = remainingSec(site.id);
-                  return (
-                    <div key={site.id} className="relative">
-                      <SiteTile
-                        site={site}
-                        onClick={handleTileClick}
-                        isFavorite={favorites.includes(site.id)}
-                        onToggleFavorite={toggleFavorite}
-                      />
-                      {secs > 0 && (
-                        <div className="pointer-events-none absolute left-1/2 top-[56px] flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full bg-black/70 backdrop-blur-md sm:top-[64px] sm:h-24 sm:w-24">
-                          <span className="text-3xl font-black text-white tabular-nums">{secs}</span>
+          ) : (
+            <div className="relative rounded-3xl border border-white/10 bg-black/40 p-6 backdrop-blur-md sm:p-8">
+              {filtered.length === 0 ? (
+                <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-10 text-center text-white/70">
+                  {active === 'favorites'
+                    ? 'No favorites yet. Tap the star on any tile to add it here.'
+                    : 'No apps here. Try the App Store to install more.'}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3">
+                    {pageItems.map((site) => {
+                      const secs = remainingSec(site.id);
+                      return (
+                        <div key={site.id} className="relative">
+                          <SiteTile
+                            site={site}
+                            onClick={handleTileClick}
+                            isFavorite={favorites.includes(site.id)}
+                            onToggleFavorite={toggleFavorite}
+                          />
+                          {secs > 0 && (
+                            <div className="pointer-events-none absolute left-1/2 top-[56px] flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full bg-black/70 backdrop-blur-md sm:top-[64px] sm:h-24 sm:w-24">
+                              <span className="text-3xl font-black text-white tabular-nums">{secs}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
+                      );
+                    })}
+                  </div>
 
-        <p className="mt-16 text-center text-xs text-white/40">
-          Made for curious students. Click any tile to launch.
-        </p>
+                  {/* Pagination arrows */}
+                  {totalPages > 1 && (
+                    <>
+                      {page > 0 && (
+                        <button
+                          onClick={() => setPage((p) => Math.max(0, p - 1))}
+                          aria-label="Previous page"
+                          className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:scale-110"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                      )}
+                      {page < totalPages - 1 && (
+                        <button
+                          onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                          aria-label="Next page"
+                          className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:scale-110"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      )}
+                      <div className="mt-6 flex items-center justify-center gap-1.5">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                          <span
+                            key={i}
+                            className={`h-1.5 rounded-full transition-all ${
+                              i === page ? 'w-6 bg-white' : 'w-1.5 bg-white/30'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </section>
       </main>
 
       <ComingSoonModal site={selected} open={open} onOpenChange={setOpen} />
