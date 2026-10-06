@@ -203,12 +203,18 @@ const SitesPage = () => {
             {/* Site name + made-by badge */}
             <div>
               <h1
-                className="text-xl font-extrabold tracking-tight text-white"
-                style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+                className="text-4xl font-black tracking-tight text-white"
+                style={{
+                  fontFamily: "'Bungee', 'Inter', system-ui, sans-serif",
+                  letterSpacing: '-0.02em',
+                  textShadow: '2px 2px 0 rgba(0,0,0,0.6), 4px 4px 12px rgba(255,255,255,0.1)',
+                  transform: 'skewX(-4deg)',
+                  display: 'inline-block',
+                }}
               >
-                Sites for school. <span>:]</span>
+                Pixy<span className="ml-1 align-super text-xl font-black text-white/90">v2</span>
               </h1>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1">
+              <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/85">
                   Made by neuro
