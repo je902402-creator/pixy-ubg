@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 
 const GLITCH_GIF =
-  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/gx1vanm6_image.png';
+  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/hvwf2fb6_image.png';
 
 // IntroScreen phases:
 //   'start'   -> black screen with ENTER button
