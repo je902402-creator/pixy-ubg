@@ -171,7 +171,7 @@ export const sites = [
     bg: '#000000',
     iconType: 'image',
     iconValue:
-      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/6b10aa58d64eed30_image.png',
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/caa55ff75556a858_image.png',
     glow: '#ffffff',
     description: 'Sleek streaming hub for movies and series.',
   },

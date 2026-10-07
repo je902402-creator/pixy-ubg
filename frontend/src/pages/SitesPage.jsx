@@ -30,6 +30,7 @@ const FAV_KEY = 'sites_for_school_favorites_v1';
 const INSTALLED_KEY = 'sites_for_school_installed_v1';
 const PENDING_KEY = 'sites_for_school_pending_v1';
 const BG_KEY = 'sites_for_school_bg_v1';
+const ORDER_KEY = 'sites_for_school_order_v1';
 const INSTALL_DELAY_MS = 5000;
 const PAGE_SIZE = 6;
 
@@ -66,6 +67,8 @@ const SitesPage = () => {
   const [favorites, setFavorites] = useState([]);
   const [introDone, setIntroDone] = useState(false);
   const [installed, setInstalled] = useState(defaultInstalled);
+  const [order, setOrder] = useState([]);
+  const [dragId, setDragId] = useState(null);
   const [pending, setPending] = useState({});
   const [bgId, setBgId] = useState('default');
   const [settingsView, setSettingsView] = useState(null);
@@ -82,6 +85,8 @@ const SitesPage = () => {
       if (p) setPending(JSON.parse(p));
       const b = localStorage.getItem(BG_KEY);
       if (b) setBgId(b);
+      const o = localStorage.getItem(ORDER_KEY);
+      if (o) setOrder(JSON.parse(o));
     } catch { /* ignore */ }
   }, []);
 
@@ -89,6 +94,7 @@ const SitesPage = () => {
   useEffect(() => { try { localStorage.setItem(INSTALLED_KEY, JSON.stringify(installed)); } catch { /* */ } }, [installed]);
   useEffect(() => { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch { /* */ } }, [pending]);
   useEffect(() => { try { localStorage.setItem(BG_KEY, bgId); } catch { /* */ } }, [bgId]);
+  useEffect(() => { try { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch { /* */ } }, [order]);
 
   useEffect(() => {
     if (!Object.keys(pending).length) return;
@@ -127,7 +133,7 @@ const SitesPage = () => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return sites.filter((s) => {
+    const list = sites.filter((s) => {
       if (!installed.includes(s.id)) return false;
       let catMatch = true;
       if (active === 'favorites') catMatch = favorites.includes(s.id);
@@ -135,7 +141,31 @@ const SitesPage = () => {
       const qMatch = !q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
       return catMatch && qMatch;
     });
-  }, [query, active, favorites, installed]);
+    // Apply custom order: items that appear in `order` come first, in their saved order
+    const indexOf = (id) => {
+      const i = order.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    return [...list].sort((a, b) => indexOf(a.id) - indexOf(b.id));
+  }, [query, active, favorites, installed, order]);
+
+  const reorderIds = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    // Start from a full ordering of ALL sites to make this stable
+    const current = (() => {
+      const base = order.length ? [...order] : [];
+      // Append any ids missing from current order
+      sites.forEach((s) => { if (!base.includes(s.id)) base.push(s.id); });
+      return base;
+    })();
+    const from = current.indexOf(sourceId);
+    const to = current.indexOf(targetId);
+    if (from === -1 || to === -1) return;
+    const copy = [...current];
+    const [moved] = copy.splice(from, 1);
+    copy.splice(to, 0, moved);
+    setOrder(copy);
+  };
 
   // Reset page when filter/search changes
   useEffect(() => { setPage(0); }, [active, query]);
@@ -345,8 +375,31 @@ const SitesPage = () => {
                   <div className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 sm:grid-cols-3">
                     {pageItems.map((site) => {
                       const secs = remainingSec(site.id);
+                      const isDragging = dragId === site.id;
                       return (
-                        <div key={site.id} className="relative">
+                        <div
+                          key={site.id}
+                          draggable
+                          onDragStart={(e) => {
+                            setDragId(site.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                            try { e.dataTransfer.setData('text/plain', site.id); } catch { /* */ }
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const src = dragId || (() => { try { return e.dataTransfer.getData('text/plain'); } catch { return null; } })();
+                            reorderIds(src, site.id);
+                            setDragId(null);
+                          }}
+                          onDragEnd={() => setDragId(null)}
+                          className={`relative transition-transform duration-200 ${
+                            isDragging ? 'scale-95 opacity-50' : ''
+                          }`}
+                        >
                           <SiteTile
                             site={site}
                             onClick={handleTileClick}
