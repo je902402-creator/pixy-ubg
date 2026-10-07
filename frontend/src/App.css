@@ -1,6 +1,6 @@
 .App {
   min-height: 100vh;
-  background: #000;
+  background: transparent;
 }
 
 /* Import a display font for the title */

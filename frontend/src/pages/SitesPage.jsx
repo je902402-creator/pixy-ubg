@@ -226,10 +226,10 @@ const SitesPage = () => {
       {activeBg.type === 'video' ? <VideoBackground src={activeBg.src} /> : <StarField />}
       {!introDone && <IntroScreen onDone={() => setIntroDone(true)} />}
 
-      <main className="relative mx-auto flex min-h-screen max-w-[1400px] flex-col gap-6 px-4 py-6 md:flex-row md:px-6 md:py-8">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col gap-6 px-4 py-6 md:flex-row md:px-6 md:py-8">
         {/* LEFT SIDEBAR */}
         <aside className="md:sticky md:top-6 md:h-[calc(100vh-4rem)] md:w-[300px] md:shrink-0">
-          <div className="flex h-full flex-col gap-4 rounded-3xl border border-white/10 bg-black/60 p-5 backdrop-blur-xl">
+          <div className="flex h-full flex-col gap-4 rounded-3xl border border-white/10 bg-black/40 p-5 backdrop-blur-xl">
             {/* Site name + made-by badge */}
             <div>
               <h1
@@ -363,7 +363,7 @@ const SitesPage = () => {
               </div>
             </div>
           ) : (
-            <div className="relative rounded-3xl border border-white/10 bg-black/40 p-6 backdrop-blur-md sm:p-8">
+            <div className="relative rounded-3xl border border-white/10 bg-black/25 p-6 backdrop-blur-md sm:p-8">
               {filtered.length === 0 ? (
                 <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-white/5 p-10 text-center text-white/70">
                   {active === 'favorites'
