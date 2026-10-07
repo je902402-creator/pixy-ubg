@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 
-const GLITCH_GIF =
-  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/hvwf2fb6_image.png';
+const INTRO_VIDEO =
+  'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/5c77e574767e944d_QuickBoot.mp4';
 
 // IntroScreen phases:
 //   'start'   -> black screen with ENTER button
-//   'playing' -> glitch gif full-screen; press Enter (or click) again to skip
+//   'playing' -> full-screen intro video; press Enter (or click) again to skip
 //   'done'    -> hides overlay, reveals site
 const IntroScreen = ({ onDone }) => {
   const [phase, setPhase] = useState('start');
+  const videoRef = useRef(null);
 
   const finish = useCallback(() => {
     setPhase('done');
@@ -30,13 +31,6 @@ const IntroScreen = ({ onDone }) => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [phase, startIntro, finish]);
-
-  // Auto-finish after 5s in case user does nothing
-  useEffect(() => {
-    if (phase !== 'playing') return;
-    const t = setTimeout(finish, 5000);
-    return () => clearTimeout(t);
-  }, [phase, finish]);
 
   if (phase === 'done') return null;
 
@@ -65,11 +59,14 @@ const IntroScreen = ({ onDone }) => {
 
       {phase === 'playing' && (
         <>
-          <img
-            src={GLITCH_GIF}
-            alt="intro"
+          <video
+            ref={videoRef}
+            src={INTRO_VIDEO}
+            autoPlay
+            muted
+            playsInline
+            onEnded={finish}
             className="h-full w-full object-cover"
-            draggable={false}
           />
           <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-white/30 bg-black/60 px-4 py-1.5 text-[11px] uppercase tracking-[0.3em] text-white/80 backdrop-blur-sm">
             press enter to skip
