@@ -149,4 +149,30 @@ export const sites = [
     glow: '#ff8a1f',
     description: 'A whole zone of unblocked fun. Install to launch.',
   },
+  {
+    id: 'senshi',
+    name: 'Senshi',
+    category: 'movies',
+    url: 'https://Senshi.to',
+    accent: '#a855f7',
+    bg: '#120a1a',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/3835e75691ca871f_image.png',
+    glow: '#a855f7',
+    description: 'Stream anime and shows with a warrior spirit.',
+  },
+  {
+    id: 'streamex',
+    name: 'StreameX',
+    category: 'movies',
+    url: 'https://streamex.hn',
+    accent: '#ffffff',
+    bg: '#000000',
+    iconType: 'image',
+    iconValue:
+      'https://customer-assets-jai6qajn.emergentagent.net/job_e-commerce-1388/artifacts/6b10aa58d64eed30_image.png',
+    glow: '#ffffff',
+    description: 'Sleek streaming hub for movies and series.',
+  },
 ];
