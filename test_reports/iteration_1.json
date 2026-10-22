@@ -1,0 +1,29 @@
+{
+  "summary": "First full test of PIXY V2. Backend /api/state GET/PUT: 10/10 pytest pass (new id -> exists:false, upsert, overwrite, extra fields ignored, invalid ids 400, bad body 422). Frontend (1920x1080): intro picker + Enter skip works for classic/wave/dock. Wave: 12 tiles, click-to-focus updates hero, focused-tile click and wave-open-btn open a new tab, ArrowLeft/Right move focus, wave-fav-btn -> Favorites shows 1. Dock: cyan pulsing focus (animation dock-pulse, cyan box-shadow), dock-focus-title updates via click/arrow keys, dock-fav toggles, figure-os-v3 opens Coming Soon dialog. Classic: HTML5 drag-drop reorder works and persists, page-next/prev work. All layouts: categories filter correctly (games 2, movies 3, tools 4, os 3), search filters, store panel install/uninstall works, unblockedzone install shows install-countdown and clears after ~5s, calls-btn href=https://app.gamevox.com target=_blank, panic-btn navigates to https://launchpad.classlink.com/. Settings: bg5/bg6 render <img> in media-background, bg1 renders <video>; settings-dashboard-* switches layout live; widgets add/remove/clear work; time & app widgets drag with mouse and positions persist after reload; app widget drag does NOT open the app, click does. Persistence: reload restores dashboard/bg/widgets/favorites/order; server GET reflects state; removing pixy_state_v2 and reloading restores from server.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All layouts / widgets-layer", "issues": ["widgets-layer is z-20 above the layouts (z-10), so a dropped widget can cover nav controls (seen: BeeZ shortcut widget covered Dock Favorites/Calls circles, blocking clicks). Consider a snap-away or lower z-index for the nav area, or at least it's user-controlled.", "Widget x/y stored as absolute px; not re-clamped on window resize/smaller device, so widgets saved on a large screen can end up off-screen on a smaller one."]},
+      {"screen": "Wave layout", "issues": ["Large empty band between the tile row and the hero section at 1080p (row at top, hero pinned bottom) - acceptable PS5 style but feels sparse."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_pixy_state.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: clamp widget positions to the viewport on load/resize (store as % or re-clamp).",
+    "Optional: prevent widgets from permanently blocking nav buttons (e.g. lower z-index under header/dock nav or warn)."
+  ],
+  "critical_code_review_comments": [
+    "usePixyState: if the initial GET fails (network error), synced still becomes true and the local (possibly default) state is PUT, overwriting the server copy. Consider only enabling sync after a successful GET.",
+    "useRowFocus: keydown Enter on window launches the focused app even when a <button> (e.g. a category button) has keyboard focus, and preventDefault suppresses that button's own activation. Consider ignoring when e.target is a BUTTON/A.",
+    "No ownership on /api/state/{device_id} - anyone knowing a device id can overwrite it (acceptable for no-auth MVP).",
+    "pending install timestamps rely on client clock (Date.now) and are persisted server-side; harmless but could be computed relative."
+  ],
+  "updated_files": ["/app/backend/tests/test_pixy_state.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Test device ids prefixed TEST- in pixy_states collection.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Intro: click intro-dashboard-{id}, intro-enter-btn, then keyboard Enter. Widgets added via settings are offset by 24px so they overlap - drag the topmost (last added) or add one at a time. Each browser_automation run gets a fresh localStorage/device id."
+}

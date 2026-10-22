@@ -86,7 +86,7 @@ const DraggableWidget = ({ widget, children, onMove, onRemove, container }) => {
     <div
       ref={ref}
       data-testid={`widget-${widget.type}`}
-      style={{ left: widget.x, top: widget.y }}
+      style={{ left: Math.min(widget.x, Math.max(0, window.innerWidth - 140)), top: Math.min(widget.y, Math.max(0, window.innerHeight - 100)) }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -109,6 +109,12 @@ const DraggableWidget = ({ widget, children, onMove, onRemove, container }) => {
 
 // Main widget layer: renders all widgets inside the given container ref.
 const WidgetsLayer = ({ widgets, setWidgets, sites, onLaunch, containerRef }) => {
+  const [, setSize] = useState(0);
+  useEffect(() => {
+    const onResize = () => setSize(window.innerWidth + window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const moveWidget = (id, x, y) => {
     setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, x, y } : w)));
   };
