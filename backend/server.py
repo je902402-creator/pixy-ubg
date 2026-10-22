@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,7 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Dict, Any
 import uuid
 from datetime import datetime, timezone
 
@@ -65,6 +65,42 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
+class PixyState(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    favorites: List[str] = Field(default_factory=list)
+    installed: List[str] = Field(default_factory=list)
+    pending: Dict[str, float] = Field(default_factory=dict)
+    bgId: str = "default"
+    order: List[str] = Field(default_factory=list)
+    dashboard: str = "classic"
+    widgets: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+def _check_device(device_id: str):
+    if not (8 <= len(device_id) <= 64) or not all(c.isalnum() or c == "-" for c in device_id):
+        raise HTTPException(status_code=400, detail="Invalid device id")
+
+
+@api_router.get("/state/{device_id}")
+async def get_pixy_state(device_id: str):
+    _check_device(device_id)
+    doc = await db.pixy_states.find_one({"device_id": device_id}, {"_id": 0})
+    if not doc:
+        return {"exists": False, "state": None}
+    return {"exists": True, "state": PixyState(**doc.get("state", {})).model_dump()}
+
+
+@api_router.put("/state/{device_id}")
+async def put_pixy_state(device_id: str, state: PixyState):
+    _check_device(device_id)
+    await db.pixy_states.update_one(
+        {"device_id": device_id},
+        {"$set": {"state": state.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    return {"ok": True}
+
 
 # Include the router in the main app
 app.include_router(api_router)

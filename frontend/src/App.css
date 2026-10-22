@@ -1,3 +1,9 @@
+@keyframes dock-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px #00c3e3, 0 0 0 7px rgba(0,0,0,0.6); }
+  50% { box-shadow: 0 0 0 4px #7df3ff, 0 0 0 7px rgba(0,0,0,0.6); }
+}
+.dock-focus { animation: dock-pulse 1.4s ease-in-out infinite; }
+
 .App {
   min-height: 100vh;
   background: transparent;
