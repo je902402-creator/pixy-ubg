@@ -30,6 +30,17 @@ export const FILTERS = [
 
 export const CAT_ICON = { all: Grid3x3, games: Gamepad2, movies: Film, tools: Wrench, os: Monitor };
 
+export const THEMES = [
+  { id: 'default', name: 'Default', color: '#ffffff' },
+  { id: 'red', name: 'Red', color: '#ef4444' },
+  { id: 'blue', name: 'Blue', color: '#3b82f6' },
+  { id: 'green', name: 'Green', color: '#22c55e' },
+  { id: 'yellow', name: 'Yellow', color: '#facc15' },
+  { id: 'orange', name: 'Orange', color: '#f97316' },
+  { id: 'pink', name: 'Pink', color: '#ec4899' },
+  { id: 'purple', name: 'Purple', color: '#a855f7' },
+];
+
 export const DASHBOARDS = [
   { id: 'classic', label: 'Classic', hint: 'Sidebar layout', Icon: Monitor },
   { id: 'wave', label: 'Wave', hint: 'PS5-style dashboard', Icon: Rows },

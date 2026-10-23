@@ -5,7 +5,7 @@ import { APP_STORE_ICON } from '../constants';
 import SiteIcon from './SiteIcon';
 
 const AppStorePanel = ({ installed, onInstall, onUninstall, onClose }) => (
-  <div data-testid="app-store-panel" className="overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
+  <div data-testid="app-store-panel" className="theme-panel overflow-hidden rounded-3xl border border-black/10 bg-white text-gray-900 shadow-2xl">
     <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-6 py-4">
       <img src={APP_STORE_ICON} alt="App Store" className="h-9 w-9 rounded-lg" />
       <div className="flex-1">
@@ -43,7 +43,7 @@ const AppStorePanel = ({ installed, onInstall, onUninstall, onClose }) => (
                 <button
                   data-testid={`install-btn-${site.id}`}
                   onClick={() => onInstall(site.id)}
-                  className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                  className="theme-active mt-1 inline-flex items-center gap-1 self-start rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
                 >
                   <Download className="h-3 w-3" /> Install
                 </button>

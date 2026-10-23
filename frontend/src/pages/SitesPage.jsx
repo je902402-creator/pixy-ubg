@@ -12,13 +12,15 @@ import ClassicLayout from '../layouts/ClassicLayout';
 import WaveLayout from '../layouts/WaveLayout';
 import DockLayout from '../layouts/DockLayout';
 import { usePixyState } from '../hooks/usePixyState';
-import { BACKGROUNDS, INSTALL_DELAY_MS } from '../constants';
+import { BACKGROUNDS, INSTALL_DELAY_MS, THEMES } from '../constants';
 
 const LAYOUTS = { classic: ClassicLayout, wave: WaveLayout, dock: DockLayout };
 
 const SitesPage = () => {
   const { state, set } = usePixyState();
-  const { favorites, installed, pending, bgId, order, dashboard, widgets } = state;
+  const { favorites, installed, pending, bgId, order, dashboard, widgets, theme } = state;
+  const themeColor = (THEMES.find((t) => t.id === theme) || THEMES[0]).color;
+  const themed = theme && theme !== 'default';
   const [query, setQuery] = useState('');
   const [active, setActive] = useState('all');
   const [selected, setSelected] = useState(null);
@@ -96,7 +98,12 @@ const SitesPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden">
+    <div
+      data-testid="app-root"
+      data-theme={themed ? theme : undefined}
+      style={themed ? { '--accent': themeColor, '--accent-dock': themeColor } : undefined}
+      className="relative min-h-screen w-full overflow-x-hidden"
+    >
       {activeBg.type === 'stars' ? <StarField /> : <VideoBackground src={activeBg.src} type={activeBg.type} />}
       {!introDone && <IntroScreen dashboard={dashboard} onDashboardChange={set('dashboard')} onDone={() => setIntroDone(true)} />}
       <Layout ctx={ctx} />
@@ -110,6 +117,7 @@ const SitesPage = () => {
           bgId={bgId} setBgId={set('bgId')}
           dashboard={dashboard} setDashboard={set('dashboard')}
           widgets={widgets} setWidgets={set('widgets')}
+          theme={theme || 'default'} setTheme={set('theme')}
           apps={sites.filter((s) => installed.includes(s.id))}
         />
       )}

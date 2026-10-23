@@ -12,6 +12,8 @@ Web-based app launcher OS "PIXY V2": QuickBoot intro (Enter to start/skip), app 
 - Earlier: intro, grid, App Store, DnD, backgrounds, Panic/Calls, branding
 - 2026-06: Wave (PS5) + Dock (Switch) layouts, Calls/Panic in all layouts, draggable widgets (time/app) with persistence, Settings → Dashboard & Widgets panels, image backgrounds fixed, MongoDB persistence. Tested: iteration_1 100% backend+frontend.
 
+- 2026-06: Themes (Default white, Red, Blue, Green, Yellow, Orange, Pink, Purple) — colors button outlines/text, selected tile, App Store install buttons + outline in all layouts; saved to DB (`theme` field). Self-tested via screenshots.
+
 ## Backlog
-- P1: Themes, Sounds, About settings panels (currently "Coming soon")
+- P1: Sounds, About settings panels (currently "Coming soon")
 - P2: Sign-in to sync across devices; resize/snap widgets

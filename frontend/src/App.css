@@ -1,6 +1,13 @@
+[data-theme] .theme-btn { border-color: var(--accent) !important; color: var(--accent) !important; }
+[data-theme] .theme-btn::placeholder { color: var(--accent); opacity: 0.6; }
+[data-theme] .theme-text { color: var(--accent) !important; }
+[data-theme] .theme-bg { background-color: var(--accent) !important; }
+[data-theme] .theme-active { background-color: var(--accent) !important; border-color: var(--accent) !important; color: #000 !important; }
+[data-theme] .theme-focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent), 0 20px 50px -10px rgba(0,0,0,0.8) !important; }
+[data-theme] .theme-panel { box-shadow: 0 0 0 3px var(--accent), 0 25px 50px -12px rgba(0,0,0,0.25) !important; }
 @keyframes dock-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px #00c3e3, 0 0 0 7px rgba(0,0,0,0.6); }
-  50% { box-shadow: 0 0 0 4px #7df3ff, 0 0 0 7px rgba(0,0,0,0.6); }
+  0%, 100% { box-shadow: 0 0 0 4px var(--accent-dock, #00c3e3), 0 0 0 7px rgba(0,0,0,0.6); }
+  50% { box-shadow: 0 0 0 6px var(--accent-dock, #7df3ff), 0 0 0 7px rgba(0,0,0,0.6); }
 }
 .dock-focus { animation: dock-pulse 1.4s ease-in-out infinite; }
 

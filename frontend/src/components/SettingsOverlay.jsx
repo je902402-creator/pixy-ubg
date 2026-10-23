@@ -1,24 +1,25 @@
 import React from 'react';
-import { Settings as SettingsIcon, X, ArrowLeft, Image as ImageIcon, LayoutDashboard, Clock, Plus, Trash2 } from 'lucide-react';
-import { BACKGROUNDS, DASHBOARDS } from '../constants';
+import { Settings as SettingsIcon, X, ArrowLeft, Image as ImageIcon, LayoutDashboard, Clock, Plus, Trash2, Palette, Check } from 'lucide-react';
+import { BACKGROUNDS, DASHBOARDS, THEMES } from '../constants';
 import SiteIcon from './SiteIcon';
 
-const TITLES = { menu: 'Settings', backgrounds: 'Backgrounds', dashboard: 'Dashboard', widgets: 'Widgets' };
+const TITLES = { menu: 'Settings', backgrounds: 'Backgrounds', dashboard: 'Dashboard', widgets: 'Widgets', themes: 'Themes' };
 const MENU = [
   { id: 'backgrounds', label: 'Backgrounds', Icon: ImageIcon, grad: 'from-indigo-500 to-purple-600' },
   { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, grad: 'from-sky-500 to-cyan-400' },
   { id: 'widgets', label: 'Widgets', Icon: Clock, grad: 'from-emerald-500 to-teal-400' },
+  { id: 'themes', label: 'Themes', Icon: Palette, grad: 'from-rose-500 to-orange-400' },
 ];
 
 const MenuView = ({ setView }) => (
   <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3">
     {MENU.map(({ id, label, Icon, grad }) => (
-      <button key={id} data-testid={`settings-${id}-btn`} onClick={() => setView(id)} className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-center transition-colors hover:bg-white/10">
+      <button key={id} data-testid={`settings-${id}-btn`} onClick={() => setView(id)} className="theme-btn flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-center transition-colors hover:bg-white/10">
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${grad}`}><Icon className="h-6 w-6 text-white" /></div>
         <span className="text-sm font-semibold">{label}</span>
       </button>
     ))}
-    {['Themes', 'Sounds', 'About'].map((label) => (
+    {['Sounds', 'About'].map((label) => (
       <button key={label} disabled className="flex cursor-not-allowed flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-center opacity-60">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10"><SettingsIcon className="h-6 w-6 text-white/70" /></div>
         <span className="text-sm font-semibold">{label}</span>
@@ -97,7 +98,32 @@ const WidgetsView = ({ widgets, setWidgets, apps }) => {
   );
 };
 
-const SettingsOverlay = ({ view, setView, bgId, setBgId, dashboard, setDashboard, widgets, setWidgets, apps }) => (
+const ThemesView = ({ theme, setTheme }) => (
+  <div className="space-y-4 p-6">
+    <p className="text-xs text-white/50">Pick a color for button outlines, button text and the selected tile.</p>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {THEMES.map((t) => {
+        const on = theme === t.id;
+        return (
+          <button
+            key={t.id}
+            data-testid={`theme-option-${t.id}`}
+            onClick={() => setTheme(t.id)}
+            className="flex items-center gap-3 rounded-xl border-2 bg-white/5 px-3 py-3 text-left text-sm font-bold transition-transform hover:scale-[1.03]"
+            style={{ borderColor: on ? t.color : 'rgba(255,255,255,0.1)', color: t.color }}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: t.color }}>
+              {on && <Check className="h-4 w-4 text-black" />}
+            </span>
+            {t.name}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
+const SettingsOverlay = ({ view, setView, bgId, setBgId, dashboard, setDashboard, widgets, setWidgets, apps, theme, setTheme }) => (
   <div data-testid="settings-overlay" className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
     <div className="mt-16 w-full max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-[#0b0b12] text-white shadow-2xl">
       <div className="flex items-center gap-3 border-b border-white/10 bg-white/5 px-6 py-4">
@@ -115,6 +141,7 @@ const SettingsOverlay = ({ view, setView, bgId, setBgId, dashboard, setDashboard
       {view === 'menu' && <MenuView setView={setView} />}
       {view === 'backgrounds' && <BackgroundsView bgId={bgId} setBgId={setBgId} />}
       {view === 'dashboard' && <DashboardView dashboard={dashboard} setDashboard={setDashboard} />}
+      {view === 'themes' && <ThemesView theme={theme} setTheme={setTheme} />}
       {view === 'widgets' && <WidgetsView widgets={widgets} setWidgets={setWidgets} apps={apps} />}
     </div>
   </div>

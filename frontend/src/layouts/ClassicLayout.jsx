@@ -14,10 +14,10 @@ const SidebarButton = ({ icon: Icon, label, onClick, active, iconNode, danger, t
     onClick={onClick}
     className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
       active
-        ? 'border-white bg-white text-black'
+        ? 'theme-active border-white bg-white text-black'
         : danger
         ? 'border-red-400/30 bg-red-500/10 text-red-200 hover:bg-red-500/20'
-        : 'border-white/10 bg-white/5 text-white/85 hover:bg-white/10'
+        : 'theme-btn border-white/10 bg-white/5 text-white/85 hover:bg-white/10'
     }`}
   >
     {iconNode ? (
@@ -48,9 +48,9 @@ const Sidebar = ({ ctx }) => (
         </h1>
         <div className="mt-3 flex items-center gap-2">
           <MadeByBadge />
-          <CallsLink testId="calls-btn" className="group flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-1 transition-transform hover:scale-105">
+          <CallsLink testId="calls-btn" className="theme-btn group flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-1 transition-transform hover:scale-105">
             <CallsIcon />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/85">Calls</span>
+            <span className="theme-text text-[10px] font-bold uppercase tracking-[0.2em] text-white/85">Calls</span>
           </CallsLink>
         </div>
       </div>
@@ -61,7 +61,7 @@ const Sidebar = ({ ctx }) => (
           value={ctx.query}
           onChange={(e) => ctx.setQuery(e.target.value)}
           placeholder="Search sites..."
-          className="h-10 rounded-xl border-white/15 bg-white/5 pl-9 text-sm text-white placeholder:text-white/40 focus-visible:ring-white/30"
+          className="theme-btn h-10 rounded-xl border-white/15 bg-white/5 pl-9 text-sm text-white placeholder:text-white/40 focus-visible:ring-white/30"
         />
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto pr-1">
@@ -89,7 +89,7 @@ const PageArrow = ({ dir, onClick }) => (
     data-testid={`page-${dir}-btn`}
     onClick={onClick}
     aria-label={dir === 'prev' ? 'Previous page' : 'Next page'}
-    className={`absolute ${dir === 'prev' ? 'left-2' : 'right-2'} top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:scale-110`}
+    className={`absolute ${dir === 'prev' ? 'left-2' : 'right-2'} top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full theme-active bg-white text-black shadow-lg transition-transform hover:scale-110`}
   >
     {dir === 'prev' ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
   </button>
@@ -119,7 +119,7 @@ const ClassicGrid = ({ ctx }) => {
           {page < totalPages - 1 && <PageArrow dir="next" onClick={() => setPage((p) => p + 1)} />}
           <div className="mt-6 flex items-center justify-center gap-1.5">
             {Array.from({ length: totalPages }).map((_, i) => (
-              <span key={i} className={`h-1.5 rounded-full transition-all ${i === page ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
+              <span key={i} className={`h-1.5 rounded-full transition-all ${i === page ? 'theme-bg w-6 bg-white' : 'w-1.5 bg-white/30'}`} />
             ))}
           </div>
         </>

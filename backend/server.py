@@ -74,6 +74,7 @@ class PixyState(BaseModel):
     bgId: str = "default"
     order: List[str] = Field(default_factory=list)
     dashboard: str = "classic"
+    theme: str = "default"
     widgets: List[Dict[str, Any]] = Field(default_factory=list)
 
 

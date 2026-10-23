@@ -18,6 +18,7 @@ const defaults = () => ({
   bgId: 'default',
   order: [],
   dashboard: 'classic',
+  theme: 'default',
   widgets: [],
 });
 

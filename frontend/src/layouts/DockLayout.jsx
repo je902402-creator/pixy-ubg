@@ -7,7 +7,8 @@ import { FILTERS, CAT_ICON, APP_STORE_ICON, CLASSLINK_LOGO } from '../constants'
 import { useRowFocus } from '../hooks/useRowFocus';
 import { EmptyState } from './ClassicLayout';
 
-const CYAN = '#00c3e3';
+const CYAN = 'var(--accent-dock, #00c3e3)';
+const CYAN_GLOW = 'color-mix(in srgb, var(--accent-dock, #00c3e3) 35%, transparent)';
 
 const DockHeader = ({ ctx }) => (
   <header className="flex items-center gap-4">
@@ -21,7 +22,7 @@ const DockHeader = ({ ctx }) => (
           value={ctx.query}
           onChange={(e) => ctx.setQuery(e.target.value)}
           placeholder="Search"
-          className="h-9 w-36 rounded-full border border-white/15 bg-black/40 pl-9 pr-3 text-sm text-white outline-none backdrop-blur-md placeholder:text-white/40 focus:border-white/40 md:w-44"
+          className="theme-btn h-9 w-36 rounded-full border border-white/15 bg-black/40 pl-9 pr-3 text-sm text-white outline-none backdrop-blur-md placeholder:text-white/40 focus:border-white/40 md:w-44"
         />
       </div>
       <ClockText className="text-lg font-semibold" />
@@ -68,12 +69,12 @@ const DockRow = ({ ctx, focus, setFocusId }) => (
 const Circle = ({ testId, label, onClick, on, children, danger }) => (
   <button data-testid={testId} onClick={onClick} className="group flex w-16 flex-col items-center gap-1.5" aria-label={label}>
     <span
-      className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 bg-black/50 text-white backdrop-blur-md transition-transform group-hover:scale-110 ${danger ? 'border-red-400/60' : 'border-white/20'}`}
-      style={on ? { borderColor: CYAN, boxShadow: `0 0 0 3px ${CYAN}55` } : undefined}
+      className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 bg-black/50 text-white backdrop-blur-md transition-transform group-hover:scale-110 ${danger ? 'border-red-400/60' : 'theme-btn border-white/20'}`}
+      style={on ? { borderColor: CYAN, boxShadow: `0 0 0 3px ${CYAN_GLOW}` } : undefined}
     >
       {children}
     </span>
-    <span className={`text-[11px] font-semibold ${on ? '' : 'text-white/70'}`} style={on ? { color: CYAN } : undefined}>{label}</span>
+    <span className={`text-[11px] font-semibold ${on ? '' : 'theme-text text-white/70'}`} style={on ? { color: CYAN } : undefined}>{label}</span>
   </button>
 );
 
@@ -90,8 +91,8 @@ const DockCircles = ({ ctx }) => (
       );
     })}
     <CallsLink testId="calls-btn" className="group flex w-16 flex-col items-center gap-1.5">
-      <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black/50 backdrop-blur-md transition-transform group-hover:scale-110"><CallsIcon className="h-8 w-8" /></span>
-      <span className="text-[11px] font-semibold text-white/70">Calls</span>
+      <span className="theme-btn flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black/50 backdrop-blur-md transition-transform group-hover:scale-110"><CallsIcon className="h-8 w-8" /></span>
+      <span className="theme-text text-[11px] font-semibold text-white/70">Calls</span>
     </CallsLink>
     <Circle testId="settings-btn" label="Settings" onClick={ctx.openSettings}><SettingsIcon className="h-6 w-6" /></Circle>
     <Circle testId="panic-btn" label="Panic" onClick={triggerPanic} danger>

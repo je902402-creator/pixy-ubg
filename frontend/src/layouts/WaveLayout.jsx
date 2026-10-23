@@ -7,7 +7,7 @@ import { FILTERS, CLASSLINK_LOGO } from '../constants';
 import { useRowFocus } from '../hooks/useRowFocus';
 import { EmptyState } from './ClassicLayout';
 
-const roundBtn = 'flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/85 backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/15';
+const roundBtn = 'theme-btn flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/85 backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/15';
 
 const WaveHeader = ({ ctx }) => (
   <header className="flex flex-wrap items-center gap-x-8 gap-y-4">
@@ -19,10 +19,10 @@ const WaveHeader = ({ ctx }) => (
             key={c.id}
             data-testid={`category-${c.id}`}
             onClick={() => ctx.setActive(c.id)}
-            className={`relative pb-1.5 text-base font-semibold tracking-wide transition-colors md:text-lg ${on ? 'text-white' : 'text-white/55 hover:text-white/90'}`}
+            className={`relative pb-1.5 text-base font-semibold tracking-wide transition-colors md:text-lg ${on ? 'theme-text text-white' : 'theme-text text-white/55 opacity-75 hover:opacity-100 hover:text-white/90'}`}
           >
             {c.label}
-            <span className={`absolute inset-x-0 -bottom-0.5 h-[3px] rounded-full bg-white transition-transform duration-300 ${on ? 'scale-x-100' : 'scale-x-0'}`} />
+            <span className={`absolute inset-x-0 -bottom-0.5 h-[3px] rounded-full theme-bg bg-white transition-transform duration-300 ${on ? 'scale-x-100' : 'scale-x-0'}`} />
           </button>
         );
       })}
@@ -35,7 +35,7 @@ const WaveHeader = ({ ctx }) => (
           value={ctx.query}
           onChange={(e) => ctx.setQuery(e.target.value)}
           placeholder="Search"
-          className="h-10 w-40 rounded-full border border-white/15 bg-black/40 pl-9 pr-3 text-sm text-white outline-none backdrop-blur-md placeholder:text-white/40 focus:w-56 focus:border-white/40 md:w-44"
+          className="theme-btn h-10 w-40 rounded-full border border-white/15 bg-black/40 pl-9 pr-3 text-sm text-white outline-none backdrop-blur-md placeholder:text-white/40 focus:w-56 focus:border-white/40 md:w-44"
           style={{ transition: 'width 250ms ease' }}
         />
       </div>
@@ -63,13 +63,13 @@ const WaveRow = ({ ctx, focus, setFocusId }) => (
             onDoubleClick={() => ctx.onLaunch(site)}
             aria-label={site.name}
             className={`relative overflow-hidden rounded-2xl border transition-[width,height,box-shadow] duration-300 ease-out ${
-              on ? 'h-36 w-36 border-white shadow-[0_0_0_3px_rgba(255,255,255,0.9),0_20px_50px_-10px_rgba(0,0,0,0.8)] md:h-40 md:w-40' : 'h-24 w-24 border-white/15 opacity-85 hover:opacity-100'
+              on ? 'theme-focus h-36 w-36 border-white shadow-[0_0_0_3px_rgba(255,255,255,0.9),0_20px_50px_-10px_rgba(0,0,0,0.8)] md:h-40 md:w-40' : 'h-24 w-24 border-white/15 opacity-85 hover:opacity-100'
             }`}
           >
             <SiteIcon site={site} />
             <Countdown secs={ctx.remainingSec(site.id)} className="inset-3" />
           </button>
-          {on && <span className="mb-2 max-w-[10rem] truncate text-lg font-semibold text-white">{site.name}</span>}
+          {on && <span className="theme-text mb-2 max-w-[10rem] truncate text-lg font-semibold text-white">{site.name}</span>}
         </DraggableTile>
       );
     })}
@@ -89,7 +89,7 @@ const WaveHero = ({ ctx, site }) => {
         <button
           data-testid="wave-open-btn"
           onClick={() => ctx.onLaunch(site)}
-          className="flex items-center gap-2 rounded-full bg-white px-10 py-3 text-base font-bold text-black transition-transform hover:scale-105"
+          className="theme-active flex items-center gap-2 rounded-full bg-white px-10 py-3 text-base font-bold text-black transition-transform hover:scale-105"
         >
           <Play className="h-4 w-4" fill="#000" /> Open
         </button>
@@ -97,7 +97,7 @@ const WaveHero = ({ ctx, site }) => {
           data-testid="wave-fav-btn"
           onClick={() => ctx.toggleFavorite(site.id)}
           aria-label="Toggle favorite"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/40 backdrop-blur-md transition-transform hover:scale-110"
+          className="theme-btn flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/40 backdrop-blur-md transition-transform hover:scale-110"
         >
           <Star className={`h-5 w-5 ${fav ? 'text-yellow-300' : 'text-white/80'}`} fill={fav ? '#fde047' : 'none'} />
         </button>
