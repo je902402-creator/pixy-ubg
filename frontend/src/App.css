@@ -1,3 +1,16 @@
+.pixy-dragging iframe { pointer-events: none; }
+.pixy-dragging, .pixy-dragging * { user-select: none; }
+.win-anim {
+  animation: win-open 260ms cubic-bezier(.2,.8,.2,1);
+  transition: opacity 220ms ease, transform 280ms cubic-bezier(.2,.8,.2,1), left 280ms cubic-bezier(.2,.8,.2,1), top 280ms cubic-bezier(.2,.8,.2,1), width 280ms cubic-bezier(.2,.8,.2,1), height 280ms cubic-bezier(.2,.8,.2,1), border-radius 280ms ease, filter 200ms ease;
+}
+.pixy-dragging .win-anim { transition: opacity 220ms ease, transform 280ms ease; }
+.win-minimized { opacity: 0; transform: translateY(45vh) scale(0.35); pointer-events: none !important; }
+@keyframes win-open { from { opacity: 0; transform: scale(0.92) translateY(14px); } to { opacity: 1; transform: none; } }
+.win-progress { animation: win-progress 1.2s ease-in-out infinite; transform-origin: left; }
+@keyframes win-progress { 0% { transform: scaleX(0); opacity: 1; } 70% { transform: scaleX(0.85); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes taskbar-in { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.taskbar-in { animation: taskbar-in 240ms ease-out; }
 [data-theme] .theme-btn { border-color: var(--accent) !important; color: var(--accent) !important; }
 [data-theme] .theme-btn::placeholder { color: var(--accent); opacity: 0.6; }
 [data-theme] .theme-text { color: var(--accent) !important; }

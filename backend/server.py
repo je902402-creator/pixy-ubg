@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any
 import uuid
 from datetime import datetime, timezone
+from proxy import router as proxy_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -104,6 +105,7 @@ async def put_pixy_state(device_id: str, state: PixyState):
 
 
 # Include the router in the main app
+api_router.include_router(proxy_router)
 app.include_router(api_router)
 
 app.add_middleware(

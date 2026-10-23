@@ -12,6 +12,9 @@ import ClassicLayout from '../layouts/ClassicLayout';
 import WaveLayout from '../layouts/WaveLayout';
 import DockLayout from '../layouts/DockLayout';
 import { usePixyState } from '../hooks/usePixyState';
+import { useWindows } from '../hooks/useWindows';
+import AppWindow from '../components/AppWindow';
+import Taskbar from '../components/Taskbar';
 import { BACKGROUNDS, INSTALL_DELAY_MS, THEMES } from '../constants';
 
 const LAYOUTS = { classic: ClassicLayout, wave: WaveLayout, dock: DockLayout };
@@ -29,6 +32,8 @@ const SitesPage = () => {
   const [settingsView, setSettingsView] = useState(null);
   const [, setNow] = useState(Date.now());
   const widgetsRef = useRef(null);
+  const { wins, actions: winActions } = useWindows();
+  const topId = wins.reduce((t, w) => (!w.minimized && (!t || w.z > t.z) ? w : t), null)?.id;
 
   useEffect(() => {
     if (!Object.keys(pending).length) return undefined;
@@ -83,7 +88,7 @@ const SitesPage = () => {
 
   const onLaunch = (site) => {
     if (pending[site.id] && pending[site.id] > Date.now()) return;
-    if (site.url) { window.open(site.url, '_blank', 'noopener,noreferrer'); return; }
+    if (site.url) { winActions.open(site); return; }
     setSelected(site); setOpen(true);
   };
   const remainingSec = (id) => (pending[id] ? Math.max(0, Math.ceil((pending[id] - Date.now()) / 1000)) : 0);
@@ -110,6 +115,10 @@ const SitesPage = () => {
       <div ref={widgetsRef} data-testid="widgets-layer" className="pointer-events-none fixed inset-0 z-20">
         <WidgetsLayer widgets={widgets} setWidgets={set('widgets')} sites={sites} onLaunch={onLaunch} containerRef={widgetsRef} />
       </div>
+      <div data-testid="windows-layer" className="pointer-events-none fixed inset-0 z-30">
+        {wins.map((w) => <AppWindow key={w.id} win={w} actions={winActions} isTop={w.id === topId} />)}
+      </div>
+      <Taskbar wins={wins} actions={winActions} topId={topId} />
       <ComingSoonModal site={selected} open={open} onOpenChange={setOpen} />
       {settingsView && (
         <SettingsOverlay
