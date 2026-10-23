@@ -1,0 +1,50 @@
+{
+  "summary": "Tested the embedded proxy-browser window system. Backend: 26/26 pytest pass (16 new proxy tests plus the state tests). /api/proxy/check returns google -> embeddable:false and genizymath -> true. Loopback, private, link-local and metadata hosts return 400 'Blocked host'. Non-http schemes and bare hosts return 400. /api/proxy?url=https://example.com returns 200 text/html with <base href> and the pixyNav script injected, and no X-Frame-Options/CSP headers. However, I confirmed a real SSRF hole: redirects bypass the private-host check. Frontend (1920x1080 and 390x844): Classic tile, Wave (focused tile and wave-open-btn) and Dock (focused tile) all open app-window-{id} in the same tab, with no new tab. Title and iframe are correct. Toolbar: back and forward start disabled. Typing example.com + Enter navigates. Back, forward and reload work. The proxy toggle switches src to /api/proxy?url=... and shows the 'Proxy' badge. win-newtab is an <a target=_blank> pointing at the current URL. Window controls: minimize hides the window (opacity 0, pointer-events none) and dims the taskbar item (opacity-60). Clicking the taskbar item restores the window. Clicking the taskbar item of the top window minimizes it. Maximize and title double-click toggle full screen (1920x~1008, above the taskbar). Close removes the window and its taskbar item, and the taskbar disappears with 0 windows. Opening the same app twice gives no duplicate. Two apps give 2 windows and 2 taskbar items. Clicking a background window's title bar brings it to front. Title-bar drag moves the window. win-resize resizes, with a 360x260 minimum clamp verified. Typing Enter or arrow keys in the address bar does not trigger the layout's global keyboard handlers. Mobile: the window opens maximized (390x772) and the toolbar and controls fit. Un-maximize gives 312x658. Regression all passes: theme-option-red sets data-theme=red, the app shortcut widget opens an embedded window, the unblockedzone install countdown blocks launch until it clears and then opens a window, favorites filter works, figure-os-v3 opens the Coming Soon dialog with no window, and Panic goes to launchpad.classlink.com.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/proxy and /api/proxy/check", "issue": "SSRF via redirect: _validate() only checks the initial URL, and httpx follows redirects (follow_redirects=True) without re-validating. Reproduced: /api/proxy?url=https://httpbin.org/redirect-to?url=http://127.0.0.1:8001/api/ returned 200 {\"message\":\"Hello World\"} from the internal backend. This exposes internal services and cloud metadata (169.254.169.254).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "/api/proxy", "issue": "Proxied third-party HTML is served from the app's own origin (/api/proxy). The iframe sandbox (no allow-same-origin) protects the embedded case. But the 'open in new tab' or a direct visit to /api/proxy?url=evil runs third-party scripts top-level on the app origin, giving access to localStorage (pixy_state_v2, device id). Consider a separate origin or subdomain for the proxy, or add 'Content-Security-Policy: sandbox' to proxy responses."},
+      {"endpoint": "/api/proxy", "issue": "final_url is placed into <base href=\"...\"> without HTML-attribute escaping (only JS-escaped in the script). A URL containing a double quote could break out of the attribute. Use html.escape for the base href."},
+      {"endpoint": "/api/proxy", "issue": "DNS rebinding TOCTOU: the IP is validated through getaddrinfo, then httpx resolves the name again. Low risk, but pinning the resolved IP would be stricter."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AppWindow focus", "issue": "Clicking inside a background window's iframe content does NOT bring that window to front. onPointerDownCapture never fires because pointer events go into the cross-origin iframe. Verified: z stays 4/3 after clicking beez content. Only clicking the title bar or toolbar focuses it. Fix: put a transparent overlay over the iframe of non-top windows (pointer-events:auto, onPointerDown -> focus). Or listen for window 'blur' and check document.activeElement === iframe.", "selector": "[data-testid^=app-window-] iframe", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Address bar navigation to a frame-blocking site", "issue": "Auto-switch to Proxy only runs on first open (mode 'checking'). navigate() keeps the current mode, so typing google.com in a direct-mode window shows a blank or refused frame until the user toggles Proxy by hand. Consider re-running checkEmbeddable on navigate while in direct mode. Note that all 11 current app URLs report embeddable:true, so auto-proxy is never exercised by the default apps.", "affected_selectors": ["win-address-{id}", "win-proxy-toggle-{id}"]}
+    ],
+    "design_issues": [
+      {"screen": "Windows on viewport resize", "issues": ["Window geometry is not re-clamped or auto-maximized when the viewport shrinks. Going from 1920 to 390 width left windows at x~438 w=1100, with the close button outside the viewport. Add a resize listener that clamps x/y/w/h, or maximizes below 768px."]},
+      {"screen": "Maximized window vs taskbar", "issues": ["The maximized height is calc(100vh - 72px), but the taskbar is bottom-3 (12px) plus 66px = 78px tall, so the taskbar overlaps the bottom ~6px of the maximized window. Use ~80px."]},
+      {"screen": "Dock layout", "issues": ["The taskbar sits over the Dock footer line ('PIXY V2 · Made by neuro') and close to the dock nav row. Acceptable, but could be offset in the dock layout."]},
+      {"screen": "New windows over tiles", "issues": ["Windows open centered at 80% of the viewport, so they cover most launch tiles (in Classic, the BeeZ tile was fully covered). Users must minimize or move the window to launch another app. Consider cascading from the top-left or opening smaller."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_proxy.py", "/app/backend/tests/test_pixy_state.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "HIGH: fix the SSRF via redirect in proxy.py. Use follow_redirects=False and loop manually (max ~5 hops), calling _validate() on each Location before following. Apply this to both /proxy and /proxy/check. Alternatively, use an httpx event hook or transport that validates each request's host.",
+    "MEDIUM: make clicking anywhere in a background window (including the iframe area) bring it to front, e.g. a transparent overlay over the iframe when !isTop.",
+    "Minor: re-check embeddability on address-bar navigate in direct mode, and auto-switch to proxy when blocked.",
+    "Minor: re-clamp or auto-maximize windows on window resize. Set the maximized height to account for the 78px taskbar.",
+    "Minor: html-escape final_url in the injected <base href>. Consider serving the proxy from a separate origin or adding CSP sandbox to proxy responses."
+  ],
+  "critical_code_review_comments": [
+    "proxy.py: _validate is skipped on redirect hops (SSRF, confirmed exploitable).",
+    "proxy.py /proxy reads the whole body into memory (await c.get) before truncating to MAX_BYTES, so the cap does not bound memory. Use streaming plus a byte counter.",
+    "proxy.py: a new httpx.AsyncClient is created per request. A shared client in app lifespan would reuse connections.",
+    "proxy.py: proxied sub-resources (CSS, JS, images) load directly via <base href>, not through the proxy. Sites with hotlink, CORS or CSP-on-subresource issues may still break in proxy mode. This is expected for a light proxy, and frames inside the page are not rewritten.",
+    "AppWindow: the checkEmbeddable useEffect has no cancellation. If the window closes before the check resolves, setMode calls update on a missing id (harmless no-op).",
+    "useWindows.reload in direct mode remounts via the nonce key but always reloads history[index]. In-iframe navigation for direct-mode cross-origin pages is not tracked (framedNav only works in proxy mode), so Back/Reload can jump the user back to the original URL."
+  ],
+  "updated_files": ["/app/backend/tests/test_proxy.py (new)", "/app/backend/tests/test_pixy_state.py (added theme field to expected state)"],
+  "success_rate": {"backend": "100% of functional tests (1 security issue found outside the suite: SSRF via redirect)", "frontend": "~95% (1 medium focus bug, the rest minor)"},
+  "seed_data_creation": "None beyond TEST- device ids from test_pixy_state.py",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Intro: click intro-dashboard-{id}, intro-enter-btn, then press Enter. Classic tiles are tile-{id} wrappers, and the launch button is the last <button> inside them (the first is the star). New windows cover tiles, so launch via eval click or minimize first. Windows open at (410,150) 1100x720 with a +28px cascade, so the second window's title and close button sit under the first; don't force-click covered areas. unblockedzone is category 'tools' and not installed by default. To verify the SSRF fix: curl /api/proxy?url=https://httpbin.org/redirect-to?url=http://127.0.0.1:8001/api/ should return 400. Consider adding this as a pytest case.",
+  "test_credentials": "None required (no auth)"
+}

@@ -29,7 +29,7 @@ def test_put_then_get(client):
     did = f"TEST-{uuid.uuid4()}"
     body = {"favorites": ["beez"], "installed": ["beez", "unblockedzone"], "pending": {"unblockedzone": 123.5},
             "bgId": "bg5", "order": ["beez", "t9-os"], "dashboard": "wave",
-            "widgets": [{"id": "w-1", "type": "time", "x": 10, "y": 20}]}
+            "widgets": [{"id": "w-1", "type": "time", "x": 10, "y": 20}], "theme": "red"}
     r = client.put(f"{BASE_URL}/api/state/{did}", json=body)
     assert r.status_code == 200 and r.json() == {"ok": True}
     g = client.get(f"{BASE_URL}/api/state/{did}").json()

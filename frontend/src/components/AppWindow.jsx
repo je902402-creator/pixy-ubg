@@ -6,7 +6,7 @@ import { checkEmbeddable } from '../hooks/useWindows';
 
 const MIN_W = 360;
 const MIN_H = 260;
-const TASKBAR_H = 72;
+const TASKBAR_H = 84;
 
 const startPointerDrag = (e, onDelta) => {
   if (e.button !== 0) return;
@@ -42,12 +42,13 @@ const AppWindow = ({ win, actions, isTop }) => {
   const frameRef = useRef(null);
   const { id, site } = win;
 
+  const current = win.history[win.index];
   useEffect(() => {
     if (win.mode !== 'checking') return;
-    checkEmbeddable(site.url)
+    checkEmbeddable(current)
       .then((r) => actions.setMode(id, r.embeddable ? 'direct' : 'proxy'))
       .catch(() => actions.setMode(id, 'direct'));
-  }, [win.mode, site.url, id, actions]);
+  }, [win.mode, current, id, actions]);
 
   useEffect(() => {
     const onMsg = (e) => {
@@ -100,6 +101,7 @@ const AppWindow = ({ win, actions, isTop }) => {
       <WindowToolbar win={win} actions={actions} />
       <div className="relative flex-1 bg-white">
         {win.loading && <div data-testid={`win-loading-${site.id}`} className="theme-bg win-progress absolute inset-x-0 top-0 z-10 h-0.5 bg-white" />}
+        {!isTop && <div data-testid={`win-focus-shield-${site.id}`} className="absolute inset-0 z-20" onPointerDown={() => actions.focus(id)} />}
         {win.mode === 'checking' ? (
           <div className="flex h-full items-center justify-center bg-[#0b0b12] text-sm text-white/60">Connecting…</div>
         ) : (
