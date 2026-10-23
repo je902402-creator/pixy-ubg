@@ -49,8 +49,8 @@ export const useWindows = () => {
     move: (id, geo) => update(id, geo),
     setMode: (id, mode) => update(id, (w) => go(w, w.history, w.index, mode)),
     navigate: (id, url) => update(id, (w) => go(w, [...w.history.slice(0, w.index + 1), url], w.index + 1, w.mode === 'proxy' ? 'proxy' : 'checking')),
-    back: (id) => update(id, (w) => (w.index > 0 ? go(w, w.history, w.index - 1) : {})),
-    forward: (id) => update(id, (w) => (w.index < w.history.length - 1 ? go(w, w.history, w.index + 1) : {})),
+    back: (id) => update(id, (w) => (w.index > 0 ? go(w, w.history, w.index - 1, 'checking') : {})),
+    forward: (id) => update(id, (w) => (w.index < w.history.length - 1 ? go(w, w.history, w.index + 1, 'checking') : {})),
     reload: (id) => update(id, (w) => ({ nonce: w.nonce + 1, loading: true })),
     loaded: (id) => update(id, { loading: false }),
     framedNav: (id, url) =>

@@ -56,7 +56,9 @@ class TestProxyFetch:
         assert "pixyNav" in r.text
         assert "/api/proxy?url=" in r.text
         assert "x-frame-options" not in {k.lower() for k in r.headers}
-        assert "content-security-policy" not in {k.lower() for k in r.headers}
+        # iteration 3: proxy responses must carry a sandbox CSP
+        assert r.headers.get("content-security-policy", "").startswith("sandbox")
+        assert "allow-same-origin" not in r.headers.get("content-security-policy", "")
 
     def test_google_proxied_strips_xfo(self, s):
         r = s.get(f"{BASE_URL}/api/proxy", params={"url": "https://www.google.com"}, timeout=30)
@@ -70,3 +72,36 @@ class TestProxyFetch:
     def test_proxy_bad_scheme(self, s):
         r = s.get(f"{BASE_URL}/api/proxy", params={"url": "file:///etc/passwd"}, timeout=30)
         assert r.status_code == 400
+
+
+# Iteration 3: SSRF via redirect regression
+class TestProxyRedirectSSRF:
+    REDIR = "https://httpbin.org/redirect-to?url=http://127.0.0.1:8001/api/"
+
+    def test_proxy_redirect_to_loopback_blocked(self, s):
+        r = s.get(f"{BASE_URL}/api/proxy", params={"url": self.REDIR}, timeout=40)
+        assert r.status_code == 400
+        assert "Blocked host" in r.text
+        assert "Hello World" not in r.text
+
+    def test_check_redirect_to_loopback_blocked(self, s):
+        r = s.get(f"{BASE_URL}/api/proxy/check", params={"url": self.REDIR}, timeout=40)
+        assert r.status_code == 400
+        assert "Blocked host" in r.text
+
+    def test_proxy_redirect_to_metadata_blocked(self, s):
+        r = s.get(f"{BASE_URL}/api/proxy", params={"url": "https://httpbin.org/redirect-to?url=http://169.254.169.254/latest/meta-data/"}, timeout=40)
+        assert r.status_code == 400
+
+    def test_normal_redirect_followed(self, s):
+        r = s.get(f"{BASE_URL}/api/proxy/check", params={"url": "http://github.com"}, timeout=40)
+        assert r.status_code == 200
+        d = r.json()
+        assert d["final_url"].startswith("https://github.com")
+        assert d["embeddable"] is False
+
+    def test_proxy_normal_redirect_content(self, s):
+        r = s.get(f"{BASE_URL}/api/proxy", params={"url": "http://github.com"}, timeout=40)
+        assert r.status_code == 200
+        assert '<base href="https://github.com/' in r.text
+        assert "location" not in {k.lower() for k in r.headers}

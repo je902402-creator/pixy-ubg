@@ -1,0 +1,34 @@
+{
+  "summary": "Retested all 7 fixes from iteration 2, plus a regression pass. All of them PASS. Backend: 31/31 pytest pass. I added 5 SSRF redirect tests and updated the CSP assertion. (1) SSRF via redirect is fixed: the httpbin redirect-to 127.0.0.1:8001 returns 400 'Blocked host' on both /api/proxy and /api/proxy/check. The redirect to 169.254.169.254 also returns 400. The normal redirect http://github.com -> https://github.com/ is followed (check reports final_url https://github.com/, embeddable false; the proxy returns 200 with the right base href and no Location header). (2) Proxy responses carry 'Content-Security-Policy: sandbox allow-scripts ...' without allow-same-origin. The base href is HTML-escaped (verified by a unit call of _inject with a quote payload). Frontend at 1920x1080: (3) a background window gets win-focus-shield-{id}. Clicking its content area brings it to front (z 2->4), and the shield moves to the other window. (4) Typing github.com in the address bar of a direct-mode window auto-switches to proxy: the iframe src is /api/proxy?url=https%3A%2F%2Fgithub.com, the PROXY badge shows, the toggle has theme-active, and GitHub renders. (5) Resizing to 390x844 maximizes all windows (390x760). Shrinking to 1000x700 clamps the window to x=0..1000 with h=616, inside the area above the taskbar, and the close button stays visible. (6) A maximized window is 1920x996 and the taskbar starts at y=1002, so there is no overlap. (7) New windows are 960x640, centered with a +28px cascade. Regression passes: the title-bar drag moves the window, the win-resize handle resizes, the taskbar toggles minimize/restore, the minimize button works, back/forward work, and close removes the window and the taskbar.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/proxy", "issue": "js_url in the injected <script> is only escaped for quotes and backslashes. A final URL containing '</script>' could close the script block. httpx normally percent-encodes < and >, so this is low risk. json.dumps plus replacing '</' with '<\\/' would be stricter."},
+      {"endpoint": "/api/proxy", "issue": "Still open from iteration 2: DNS-rebinding TOCTOU (validate then re-resolve), and the full body is read into memory before the MAX_BYTES truncation."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Back after auto-proxy", "issue": "After auto-switching to proxy for github.com, pressing Back returns to the original embeddable site (cineosweb.github.io) but stays in proxy mode, because back/forward reuse w.mode. This works, but the site is now proxied unnecessarily. Optional: re-check embeddability on back/forward too.", "affected_selectors": ["win-back-{id}", "win-frame-{id}"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_proxy.py", "/app/backend/tests/test_pixy_state.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: harden the JS string escaping in _inject (json.dumps plus escaping '</').",
+    "Optional: re-run checkEmbeddable on back/forward so non-blocking sites return to direct mode."
+  ],
+  "critical_code_review_comments": [
+    "proxy.py _fetch: the manual redirect loop validates every hop correctly. Note that the 508 status for too many redirects is unusual; 502 or 400 would be more conventional.",
+    "useWindows onResize: windows stay maximized after growing back from below 768px, and the previous geometry is not restored. Acceptable.",
+    "AppWindow: the checkEmbeddable effect still has no cancellation (harmless)."
+  ],
+  "updated_files": ["/app/backend/tests/test_proxy.py (added TestProxyRedirectSSRF; updated the CSP assertion to expect the sandbox CSP)"],
+  "success_rate": {"backend": "100% (31/31)", "frontend": "100% of the retest items (7/7) plus regression"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Intro: click intro-dashboard-classic, then intro-enter-btn, then press Enter. Launch Classic tiles via eval-clicking the last button in tile-{id}. New windows are 960x640 at (480,190) with a +28px cascade. Use the class 'win-minimized' instead of opacity to check minimize state (opacity transitions make reads flaky). The SSRF tests use httpbin.org (an external dependency).",
+  "test_credentials": "None required (no auth)"
+}

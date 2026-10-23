@@ -1,5 +1,6 @@
 import html as htmlmod
 import ipaddress
+import json
 import re
 import socket
 from urllib.parse import urlparse, urljoin
@@ -66,8 +67,8 @@ def _blocks_framing(headers) -> bool:
 
 
 def _inject(html: str, final_url: str, prefix: str) -> str:
-    js_url = final_url.replace("\\", "\\\\").replace("'", "\\'")
-    snippet = f"""<base href="{htmlmod.escape(final_url, quote=True)}"><script>(function(){{var P='{prefix}',C='{js_url}';
+    js_url = json.dumps(final_url).replace("</", "<\\/")
+    snippet = f"""<base href="{htmlmod.escape(final_url, quote=True)}"><script>(function(){{var P={json.dumps(prefix)},C={js_url};
 try{{parent.postMessage({{pixyNav:C}},'*')}}catch(e){{}}
 function go(u){{location.href=P+encodeURIComponent(u)}}
 document.addEventListener('click',function(e){{var a=e.target.closest&&e.target.closest('a[href]');if(!a||a.target==='_blank')return;var h=a.getAttribute('href');if(!h||h[0]==='#'||/^(javascript|mailto|tel):/i.test(h))return;var u=new URL(h,document.baseURI).href;if(!/^https?:/.test(u))return;e.preventDefault();go(u)}},true);

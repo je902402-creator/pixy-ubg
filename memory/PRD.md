@@ -5,7 +5,7 @@ Web-based app launcher OS "PIXY V2": QuickBoot intro (Enter to start/skip), app 
 
 ## Architecture
 - Frontend React: `pages/SitesPage.jsx` (orchestrator), `layouts/{Classic,Wave,Dock}Layout.jsx`, `components/{SettingsOverlay,AppStorePanel,WidgetsLayer,DraggableTile,QuickActions,IntroScreen,VideoBackground,StarField}.jsx`, `hooks/{usePixyState,useRowFocus}.js`, `constants.js`, `mock.js` (static app list)
-- Backend FastAPI: `GET/PUT /api/state/{device_id}` → Mongo `pixy_states` (favorites, installed, pending, bgId, order, dashboard, widgets)
+- Backend FastAPI: `proxy.py` (in-site proxy browser), `GET/PUT /api/state/{device_id}` → Mongo `pixy_states` (favorites, installed, pending, bgId, order, dashboard, widgets)
 - Per-browser anonymous device id (localStorage `pixy_device_id_v1`), local cache `pixy_state_v2`, debounced server sync
 
 ## Implemented
@@ -13,6 +13,8 @@ Web-based app launcher OS "PIXY V2": QuickBoot intro (Enter to start/skip), app 
 - 2026-06: Wave (PS5) + Dock (Switch) layouts, Calls/Panic in all layouts, draggable widgets (time/app) with persistence, Settings → Dashboard & Widgets panels, image backgrounds fixed, MongoDB persistence. Tested: iteration_1 100% backend+frontend.
 
 - 2026-06: Themes (Default white, Red, Blue, Green, Yellow, Orange, Pink, Purple) — colors button outlines/text, selected tile, App Store install buttons + outline in all layouts; saved to DB (`theme` field). Self-tested via screenshots.
+
+- 2026-06: Built-in browser windows — apps open in embedded, movable/resizable windows (multi-window, taskbar, minimize/full-screen/close, back/forward/reload/address bar/open-in-new-tab). Auto proxy mode via `GET /api/proxy` + `/api/proxy/check` (strips frame-blocking headers, SSRF-safe redirect validation, sandbox CSP). Tested iteration_2/3 (100% after fixes).
 
 ## Backlog
 - P1: Sounds, About settings panels (currently "Coming soon")
