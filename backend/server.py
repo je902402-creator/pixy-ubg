@@ -1,12 +1,12 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict, StringConstraints
+from typing import List, Dict, Any, Literal, Optional, Annotated
 import uuid
 from datetime import datetime, timezone
 from proxy import router as proxy_router
@@ -67,16 +67,31 @@ async def get_status_checks():
     
     return status_checks
 
+Id = Annotated[str, StringConstraints(max_length=64)]
+
+
+class Widget(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: Id
+    type: Literal["time", "app"]
+    appId: Optional[Id] = None
+    x: float = Field(ge=-10000, le=10000)
+    y: float = Field(ge=-10000, le=10000)
+
+
 class PixyState(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    favorites: List[str] = Field(default_factory=list)
-    installed: List[str] = Field(default_factory=list)
-    pending: Dict[str, float] = Field(default_factory=dict)
-    bgId: str = "default"
-    order: List[str] = Field(default_factory=list)
-    dashboard: str = "classic"
-    theme: str = "default"
-    widgets: List[Dict[str, Any]] = Field(default_factory=list)
+    favorites: List[Id] = Field(default_factory=list, max_length=200)
+    installed: List[Id] = Field(default_factory=list, max_length=200)
+    pending: Dict[Id, float] = Field(default_factory=dict, max_length=200)
+    bgId: Id = "default"
+    order: List[Id] = Field(default_factory=list, max_length=200)
+    dashboard: Literal["classic", "wave", "dock"] = "classic"
+    theme: Id = "default"
+    widgets: List[Widget] = Field(default_factory=list, max_length=50)
+
+
+MAX_STATE_BYTES = 64 * 1024
 
 
 def _check_device(device_id: str):
@@ -94,8 +109,10 @@ async def get_pixy_state(device_id: str):
 
 
 @api_router.put("/state/{device_id}")
-async def put_pixy_state(device_id: str, state: PixyState):
+async def put_pixy_state(device_id: str, state: PixyState, request: Request):
     _check_device(device_id)
+    if int(request.headers.get("content-length") or 0) > MAX_STATE_BYTES:
+        raise HTTPException(status_code=413, detail="State too large")
     await db.pixy_states.update_one(
         {"device_id": device_id},
         {"$set": {"state": state.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
@@ -110,7 +127,7 @@ app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
