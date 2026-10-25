@@ -34,7 +34,9 @@ def test_put_then_get(client):
     assert r.status_code == 200 and r.json() == {"ok": True}
     g = client.get(f"{BASE_URL}/api/state/{did}").json()
     assert g["exists"] is True
-    assert g["state"] == body
+    # widgets normalized by Widget model (appId default None, floats)
+    expected = dict(body, widgets=[{"id": "w-1", "type": "time", "appId": None, "x": 10.0, "y": 20.0}])
+    assert g["state"] == expected
 
 
 def test_put_upsert_overwrites(client):
